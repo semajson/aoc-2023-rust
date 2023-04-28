@@ -7,17 +7,33 @@
 // then return the sum of those.
 
 // When run with `cargo run 0`, the calling code in main.rs will load the input in the file inputs/0
-// and pass that through as the input to the day00() function here as a single &str.
-// This function (as with all dayXX templates in this repo) returns two Strings, which will be printed
+// and pass that through as the input to the Day00 solution here as a single &str.
+// This solution (as with all DayXX templates in this repo) returns two Strings, which will be printed
 // out to terminal following the labels "Part 1:" and "Part 2: respectively".
+// You can also run with `--bench` to benchmark the different parts of the solution.
 
-pub fn day00(input_lines: &str) -> (String, String) {
-    let answer1 = input_lines.lines().map(sum_numbers_in_line).sum::<i32>();
-    let answer2 = input_lines
-        .lines()
-        .map(square_difference_in_line)
-        .sum::<i32>();
-    (format!("{}", answer1), format!("{}", answer2))
+use crate::Solution;
+
+#[derive(Clone, Debug)]
+pub struct Day00;
+
+impl Solution for Day00 {
+    type ParsedInput = String;
+
+    fn parse_input(input_lines: &str) -> Self::ParsedInput {
+        input_lines.to_string()
+    }
+
+    fn part_one(input: &Self::ParsedInput) -> String {
+        format!("{}", input.lines().map(sum_numbers_in_line).sum::<i32>())
+    }
+
+    fn part_two(input: &Self::ParsedInput) -> String {
+        format!(
+            "{}",
+            input.lines().map(square_difference_in_line).sum::<i32>()
+        )
+    }
 }
 
 fn sum_numbers_in_line(line: &str) -> i32 {
@@ -32,7 +48,7 @@ fn square_difference_in_line(line: &str) -> i32 {
         .map(|number| number.parse::<i32>().expect("Couldn't parse"))
         .collect::<Vec<i32>>();
     assert_eq!(numbers.len(), 2);
-    (numbers.get(0).unwrap() - numbers.get(1).unwrap()).pow(2)
+    (numbers.first().unwrap() - numbers.get(1).unwrap()).pow(2)
 }
 
 // The template per-day files also come with template UTs.  Most Advent of Code puzzles
@@ -49,11 +65,10 @@ mod tests {
     #[test]
     fn check_day00_part1_case1() {
         assert_eq!(
-            day00(
+            Day00::solve_part_one(
                 "1, 2
 4, 3"
-            )
-            .0,
+            ),
             "10".to_string()
         )
     }
@@ -61,11 +76,10 @@ mod tests {
     #[test]
     fn check_day00_part2_case1() {
         assert_eq!(
-            day00(
+            Day00::solve_part_two(
                 "1, 2
 4, 3"
-            )
-            .1,
+            ),
             "2".to_string()
         )
     }
@@ -73,9 +87,10 @@ mod tests {
     #[test]
     fn check_day00_both_case1() {
         assert_eq!(
-            day00(
+            Day00::solve(
                 "1, 2
-40, 30"
+40, 30",
+                false
             ),
             ("73".to_string(), "101".to_string())
         )

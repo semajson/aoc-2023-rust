@@ -1,8 +1,27 @@
-pub fn day14(input_lines: &str) -> (String, String) {
-    let _ = input_lines;
-    let answer1 = 0;
-    let answer2 = 0;
-    (format!("{}", answer1), format!("{}", answer2))
+use crate::Solution;
+
+#[derive(Clone, Debug)]
+pub struct Day14;
+
+impl Solution for Day14 {
+    type ParsedInput = String;
+
+    fn parse_input(input_lines: &str) -> Self::ParsedInput {
+        // You can leave this as-is if you want to handle the input differently for each part.
+        // Alternatively, you can parse the input into two completely separate structs and pass
+        // them through together in a tuple.
+        input_lines.to_string()
+    }
+
+    fn part_one(_input: &Self::ParsedInput) -> String {
+        // TODO: implement part one
+        0.to_string()
+    }
+
+    fn part_two(_input: &Self::ParsedInput) -> String {
+        // TODO: implement part two
+        0.to_string()
+    }
 }
 
 #[cfg(test)]
@@ -11,16 +30,16 @@ mod tests {
 
     #[test]
     fn check_day14_part1_case1() {
-        assert_eq!(day14("").0, "0".to_string())
+        assert_eq!(Day14::solve_part_one(""), "0".to_string())
     }
 
     #[test]
     fn check_day14_part2_case1() {
-        assert_eq!(day14("").1, "0".to_string())
+        assert_eq!(Day14::solve_part_two(""), "0".to_string())
     }
 
     #[test]
     fn check_day14_both_case1() {
-        assert_eq!(day14(""), ("0".to_string(), "0".to_string()))
+        assert_eq!(Day14::solve("", false), ("0".to_string(), "0".to_string()))
     }
 }
