@@ -7,18 +7,19 @@ impl Solution for Day12 {
     type ParsedInput = String;
 
     fn parse_input(input_lines: &str) -> Self::ParsedInput {
-        // You can leave this as-is if you want to handle the input differently for each part.
-        // Alternatively, you can parse the input into two completely separate structs and pass
-        // them through together in a tuple.
+        // Change the return type of this function by editing the ParsedInput type above.
+        // You can skip this and pass the raw string to each part.
+        // Alternatively, you can parse the input here, either working on the same mutable struct
+        // in parts one and two or passing a tuple with the data required for each part.
         input_lines.to_string()
     }
 
-    fn part_one(_input: &Self::ParsedInput) -> String {
+    fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
         // TODO: implement part one
         0.to_string()
     }
 
-    fn part_two(_input: &Self::ParsedInput) -> String {
+    fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
         // TODO: implement part two
         0.to_string()
     }

@@ -10,19 +10,11 @@ struct Cli {
     /// Benchmarks the solution for given days.
     #[arg(short, long)]
     bench: bool,
-
-    /// Whether to include wall-clock execution time in the output.
-    #[arg(short, long, conflicts_with = "bench")]
-    time: bool,
-}
-
-fn days() -> Vec<i32> {
-    (0..=25).collect()
 }
 
 fn main() {
     let cli = Cli::parse();
-    let mut days = days();
+    let mut days = (0..=25).collect::<Vec<i32>>();
     let mut days_to_execute = vec![];
     if let Some(day) = cli.day {
         if !days.contains(&day) {
@@ -36,7 +28,7 @@ fn main() {
         if cli.bench {
             bench_day(&day);
         } else {
-            solve_day(&day, !cli.time);
+            solve_day(&day, true);
         }
     }
 }

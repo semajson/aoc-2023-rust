@@ -1,14 +1,23 @@
-use advent_of_code_template::{day23::Day23, Solution};
+use advent_of_code_template::{day23::Day23, solve_day, Solution};
 fn parsing() {
     Day23::parse_input(include_str!("../inputs/23"));
 }
 
-fn part_one() {
+fn parsing_and_part_one() {
     Day23::solve_part_one(include_str!("../inputs/23"));
 }
 
-fn part_two() {
+fn parsing_and_part_two() {
     Day23::solve_part_two(include_str!("../inputs/23"));
 }
 
-iai::main!(parsing, part_one, part_two,);
+fn whole_solution() {
+    solve_day(&23, false)
+}
+
+iai::main!(
+    parsing,
+    parsing_and_part_one,
+    parsing_and_part_two,
+    whole_solution,
+);
