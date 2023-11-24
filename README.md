@@ -8,7 +8,7 @@ Adapted by Finlay Wojtan from a [previous template](https://github.com/CastleQui
 
 ### Get setup
 1. Set up your Rust environment
-2. Clone this template (`git clone https://github.com/CastleQuirm/AdventOfCodeTemplate.git`)
+2. Clone this template (`git clone https://github.com/fwojtan/AoC-bench-template.git`)
 3. Test you can run the code, using the Day 00 example.
     - In the terminal, go to the directory you've cloned the repo into (the directory containing this README.md file)
     - Run `cargo run 0`
