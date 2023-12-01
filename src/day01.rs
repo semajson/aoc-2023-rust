@@ -3,25 +3,63 @@ use crate::Solution;
 #[derive(Clone, Debug)]
 pub struct Day01;
 
+fn get_nums(line: &String) -> String {
+    let just_digits = line
+        .chars()
+        .filter(|char| char.is_digit(10))
+        .collect::<String>();
+    just_digits
+}
+
+fn replace_words_with_nums(line: &String) -> String {
+    let line = line.replace("one", "o1e");
+    let line = line.replace("two", "t2o");
+    let line = line.replace("three", "t3e");
+    let line = line.replace("four", "f4r");
+    let line = line.replace("five", "f5e");
+    let line = line.replace("six", "s6x");
+    let line = line.replace("seven", "s7n");
+    let line = line.replace("eight", "e8t");
+    let line = line.replace("nine", "n9e");
+    line
+}
+
+fn calc_calibration_value(nums: &String) -> i32 {
+    let first_digit = nums.chars().next().unwrap();
+    let last_digit = nums.chars().last().unwrap();
+    let mut number = first_digit.to_string();
+    number.push(last_digit);
+    number.parse::<i32>().unwrap()
+}
+
 impl Solution for Day01 {
-    type ParsedInput = String;
+    type ParsedInput = Vec<String>;
 
     fn parse_input(input_lines: &str) -> Self::ParsedInput {
-        // Change the return type of this function by editing the ParsedInput type above.
-        // You can skip this and pass the raw string to each part.
-        // Alternatively, you can parse the input here, either working on the same mutable struct
-        // in parts one and two or passing a tuple with the data required for each part.
-        input_lines.to_string()
+        let input_lines = input_lines.to_string();
+        input_lines
+            .lines()
+            .map(String::from)
+            .collect::<Vec<String>>()
     }
 
     fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
-        // TODO: implement part one
-        0.to_string()
+        let mut total = 0;
+        for line in _parsed_input {
+            let just_digits = get_nums(&line);
+            total += calc_calibration_value(&just_digits);
+        }
+        total.to_string()
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        // TODO: implement part two
-        0.to_string()
+        let mut total = 0;
+        for line in _parsed_input {
+            let line = replace_words_with_nums(line);
+            let just_digits = get_nums(&line);
+            total += calc_calibration_value(&just_digits);
+        }
+        total.to_string()
     }
 }
 
