@@ -3,15 +3,15 @@ use crate::Solution;
 #[derive(Clone, Debug)]
 pub struct Day01;
 
-fn get_nums(line: &String) -> String {
-    let just_digits = line
+fn get_nums(line: &str) -> String {
+    let just_nums = line
         .chars()
-        .filter(|char| char.is_digit(10))
+        .filter(|char| char.is_ascii_digit())
         .collect::<String>();
-    just_digits
+    just_nums
 }
 
-fn replace_words_with_nums(line: &String) -> String {
+fn replace_words_with_nums(line: &str) -> String {
     let line = line.replace("one", "o1e");
     let line = line.replace("two", "t2o");
     let line = line.replace("three", "t3e");
@@ -20,11 +20,10 @@ fn replace_words_with_nums(line: &String) -> String {
     let line = line.replace("six", "s6x");
     let line = line.replace("seven", "s7n");
     let line = line.replace("eight", "e8t");
-    let line = line.replace("nine", "n9e");
-    line
+    line.replace("nine", "n9e")
 }
 
-fn calc_calibration_value(nums: &String) -> i32 {
+fn calc_calibration_value(nums: &str) -> i32 {
     let first_digit = nums.chars().next().unwrap();
     let last_digit = nums.chars().last().unwrap();
     let mut number = first_digit.to_string();
@@ -46,8 +45,8 @@ impl Solution for Day01 {
     fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
         let mut total = 0;
         for line in _parsed_input {
-            let just_digits = get_nums(&line);
-            total += calc_calibration_value(&just_digits);
+            let just_nums = get_nums(line);
+            total += calc_calibration_value(&just_nums);
         }
         total.to_string()
     }
@@ -56,8 +55,8 @@ impl Solution for Day01 {
         let mut total = 0;
         for line in _parsed_input {
             let line = replace_words_with_nums(line);
-            let just_digits = get_nums(&line);
-            total += calc_calibration_value(&just_digits);
+            let just_nums = get_nums(&line);
+            total += calc_calibration_value(&just_nums);
         }
         total.to_string()
     }
@@ -69,7 +68,7 @@ mod tests {
 
     #[test]
     fn check_day01_part1_case1() {
-        assert_eq!(Day01::solve_part_one(""), "0".to_string())
+        assert_eq!(Day01::solve_part_one(""), "".to_string())
     }
 
     #[test]
