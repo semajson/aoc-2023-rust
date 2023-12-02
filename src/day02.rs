@@ -17,6 +17,17 @@ impl Round {
             true
         }
     }
+    pub fn fewest(&self, round: &mut Round) -> () {
+        if self.red > round.red {
+            round.red = self.red
+        }
+        if self.green > round.green {
+            round.green = self.green
+        }
+        if self.blue > round.blue {
+            round.blue = self.blue
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -60,6 +71,21 @@ impl Game {
         }
         true
     }
+    fn fewest_cubes(&self) -> Round {
+        let mut fewest_cube = Round {
+            red: 0,
+            blue: 0,
+            green: 0,
+        };
+        for round in self.rounds.iter() {
+            round.fewest(&mut fewest_cube);
+        }
+        fewest_cube
+    }
+    fn power(&self) -> i32 {
+        let fewest_cube = self.fewest_cubes();
+        fewest_cube.red * fewest_cube.blue * fewest_cube.green
+    }
 }
 
 impl Solution for Day02 {
@@ -96,8 +122,11 @@ impl Solution for Day02 {
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        // TODO: implement part two
-        0.to_string()
+        let mut sum = 0;
+        for game in _parsed_input {
+            sum += game.power();
+        }
+        sum.to_string()
     }
 }
 
@@ -107,16 +136,19 @@ mod tests {
 
     #[test]
     fn check_day02_part1_case1() {
-        assert_eq!(Day02::solve_part_one(""), "0".to_string())
+        assert_eq!(Day02::solve_part_one(""), "2061".to_string())
     }
 
     #[test]
     fn check_day02_part2_case1() {
-        assert_eq!(Day02::solve_part_two(""), "0".to_string())
+        assert_eq!(Day02::solve_part_two(""), "72596".to_string())
     }
 
     #[test]
     fn check_day02_both_case1() {
-        assert_eq!(Day02::solve("", false), ("0".to_string(), "0".to_string()))
+        assert_eq!(
+            Day02::solve("", false),
+            ("2061".to_string(), "72596".to_string())
+        )
     }
 }
