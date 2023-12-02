@@ -92,7 +92,7 @@ impl Game {
         }
         fewest_cubes
     }
-    fn power(&self) -> i32 {
+    fn fewest_cubes_power(&self) -> i32 {
         let fewest_cubes = self.get_fewest_possible_cubes();
         fewest_cubes.power()
     }
@@ -124,7 +124,7 @@ impl Solution for Day02 {
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
         let mut sum = 0;
         for game in _parsed_input {
-            sum += game.power();
+            sum += game.fewest_cubes_power();
         }
         sum.to_string()
     }
