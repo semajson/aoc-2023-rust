@@ -10,6 +10,26 @@ struct Cubes {
     green: i32,
 }
 impl Cubes {
+    pub fn new(line: &str) -> Cubes {
+        let mut cubes = Cubes {
+            red: 0,
+            blue: 0,
+            green: 0,
+        };
+        let colours_raw = line.split(", ").collect::<Vec<&str>>();
+        for colour_raw in colours_raw {
+            let colour = colour_raw.split(' ').collect::<Vec<&str>>();
+            let num = colour[0].parse::<i32>().unwrap();
+            match colour[1] {
+                "red" => cubes.red = num,
+                "green" => cubes.green = num,
+                "blue" => cubes.blue = num,
+                _ => panic!("Unexpected input {}", colour[1]),
+            }
+        }
+        cubes
+    }
+
     pub fn is_possible(&self, cubes_to_check: &Cubes) -> bool {
         self.red <= cubes_to_check.red
             && self.blue <= cubes_to_check.blue
@@ -44,23 +64,7 @@ impl Game {
         let raw_rounds = line[1].split("; ").collect::<Vec<&str>>();
         let mut rounds = Vec::new();
         for raw_round in raw_rounds {
-            let mut cubes = Cubes {
-                red: 0,
-                blue: 0,
-                green: 0,
-            };
-            let colours_raw = raw_round.split(", ").collect::<Vec<&str>>();
-            for colour_raw in colours_raw {
-                let colour = colour_raw.split(' ').collect::<Vec<&str>>();
-                let num = colour[0].parse::<i32>().unwrap();
-                match colour[1] {
-                    "red" => cubes.red = num,
-                    "green" => cubes.green = num,
-                    "blue" => cubes.blue = num,
-                    _ => panic!("Unexpected input {}", colour[1]),
-                }
-            }
-            rounds.push(cubes)
+            rounds.push(Cubes::new(raw_round))
         }
         Game { id, rounds }
     }
@@ -137,19 +141,44 @@ mod tests {
 
     #[test]
     fn check_day02_part1_case1() {
-        assert_eq!(Day02::solve_part_one(""), "2061".to_string())
+        assert_eq!(
+            Day02::solve_part_one(
+                "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
+Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
+Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
+Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
+Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"
+            ),
+            "8".to_string()
+        )
     }
 
     #[test]
     fn check_day02_part2_case1() {
-        assert_eq!(Day02::solve_part_two(""), "72596".to_string())
+        assert_eq!(
+            Day02::solve_part_two(
+                "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
+Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
+Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
+Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
+Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"
+            ),
+            "2286".to_string()
+        )
     }
 
     #[test]
     fn check_day02_both_case1() {
         assert_eq!(
-            Day02::solve("", false),
-            ("2061".to_string(), "72596".to_string())
+            Day02::solve(
+                "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
+Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
+Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
+Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
+Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green",
+                false
+            ),
+            ("8".to_string(), "2286".to_string())
         )
     }
 }
