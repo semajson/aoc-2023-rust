@@ -4,36 +4,37 @@ use crate::Solution;
 pub struct Day02;
 
 #[derive(Clone, Debug)]
-struct Round {
+struct Cubes {
     red: i32,
     blue: i32,
     green: i32,
 }
-impl Round {
-    pub fn possible(&self, round: &Round) -> bool {
-        if self.red > round.red || self.blue > round.blue || self.green > round.green {
-            false
-        } else {
-            true
+impl Cubes {
+    pub fn is_possible(&self, cubes_to_check: &Cubes) -> bool {
+        self.red <= cubes_to_check.red
+            && self.blue <= cubes_to_check.blue
+            && self.green <= cubes_to_check.green
+    }
+    pub fn make_possible_with_fewest_cubes(&self, fewest_cubes: &mut Cubes) {
+        if self.red > fewest_cubes.red {
+            fewest_cubes.red = self.red
+        }
+        if self.green > fewest_cubes.green {
+            fewest_cubes.green = self.green
+        }
+        if self.blue > fewest_cubes.blue {
+            fewest_cubes.blue = self.blue
         }
     }
-    pub fn fewest(&self, round: &mut Round) -> () {
-        if self.red > round.red {
-            round.red = self.red
-        }
-        if self.green > round.green {
-            round.green = self.green
-        }
-        if self.blue > round.blue {
-            round.blue = self.blue
-        }
+    pub fn power(&self) -> i32 {
+        self.red * self.blue * self.green
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct Game {
     id: i32,
-    rounds: Vec<Round>,
+    rounds: Vec<Cubes>,
 }
 impl Game {
     pub fn new(line: &str) -> Game {
@@ -43,48 +44,49 @@ impl Game {
         let raw_rounds = line[1].split("; ").collect::<Vec<&str>>();
         let mut rounds = Vec::new();
         for raw_round in raw_rounds {
-            let mut round = Round {
+            let mut cubes = Cubes {
                 red: 0,
                 blue: 0,
                 green: 0,
             };
             let colours_raw = raw_round.split(", ").collect::<Vec<&str>>();
             for colour_raw in colours_raw {
-                let colour = colour_raw.split(" ").collect::<Vec<&str>>();
+                let colour = colour_raw.split(' ').collect::<Vec<&str>>();
                 let num = colour[0].parse::<i32>().unwrap();
                 match colour[1] {
-                    "red" => round.red = num,
-                    "green" => round.green = num,
-                    "blue" => round.blue = num,
+                    "red" => cubes.red = num,
+                    "green" => cubes.green = num,
+                    "blue" => cubes.blue = num,
                     _ => panic!("Unexpected input {}", colour[1]),
                 }
             }
-            rounds.push(round)
+            rounds.push(cubes)
         }
         Game { id, rounds }
     }
-    fn round_possible(&self, round_to_check: &Round) -> bool {
-        for round in self.rounds.iter() {
-            if !round.possible(round_to_check) {
+
+    fn cubes_is_possible(&self, cubes_to_check: &Cubes) -> bool {
+        for cubes in self.rounds.iter() {
+            if !cubes.is_possible(cubes_to_check) {
                 return false;
             }
         }
         true
     }
-    fn fewest_cubes(&self) -> Round {
-        let mut fewest_cube = Round {
+    fn fewest_possible_cubes(&self) -> Cubes {
+        let mut fewest_cubes = Cubes {
             red: 0,
             blue: 0,
             green: 0,
         };
-        for round in self.rounds.iter() {
-            round.fewest(&mut fewest_cube);
+        for cubes in self.rounds.iter() {
+            cubes.make_possible_with_fewest_cubes(&mut fewest_cubes);
         }
-        fewest_cube
+        fewest_cubes
     }
     fn power(&self) -> i32 {
-        let fewest_cube = self.fewest_cubes();
-        fewest_cube.red * fewest_cube.blue * fewest_cube.green
+        let fewest_cubes = self.fewest_possible_cubes();
+        fewest_cubes.power()
     }
 }
 
@@ -106,18 +108,17 @@ impl Solution for Day02 {
     }
 
     fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
-        let round_to_check = Round {
+        let cubes_to_check = Cubes {
             red: 12,
             green: 13,
             blue: 14,
         };
         let mut total = 0;
         for game in _parsed_input {
-            if game.round_possible(&round_to_check) {
+            if game.cubes_is_possible(&cubes_to_check) {
                 total += game.id;
             }
         }
-        // TODO: implement part one
         total.to_string()
     }
 
