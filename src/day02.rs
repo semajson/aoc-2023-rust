@@ -9,6 +9,15 @@ struct Round {
     blue: i32,
     green: i32,
 }
+impl Round {
+    pub fn possible(&self, round: &Round) -> bool {
+        if self.red > round.red || self.blue > round.blue || self.green > round.green {
+            false
+        } else {
+            true
+        }
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct Game {
@@ -43,6 +52,14 @@ impl Game {
         }
         Game { id, rounds }
     }
+    fn round_possible(&self, round_to_check: &Round) -> bool {
+        for round in self.rounds.iter() {
+            if !round.possible(round_to_check) {
+                return false;
+            }
+        }
+        true
+    }
 }
 
 impl Solution for Day02 {
@@ -63,11 +80,19 @@ impl Solution for Day02 {
     }
 
     fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
+        let round_to_check = Round {
+            red: 12,
+            green: 13,
+            blue: 14,
+        };
+        let mut total = 0;
         for game in _parsed_input {
-            println!("{:?}", game);
+            if game.round_possible(&round_to_check) {
+                total += game.id;
+            }
         }
         // TODO: implement part one
-        0.to_string()
+        total.to_string()
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
