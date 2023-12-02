@@ -3,18 +3,69 @@ use crate::Solution;
 #[derive(Clone, Debug)]
 pub struct Day02;
 
+#[derive(Clone, Debug)]
+struct Round {
+    red: i32,
+    blue: i32,
+    green: i32,
+}
+
+#[derive(Clone, Debug)]
+pub struct Game {
+    id: i32,
+    rounds: Vec<Round>,
+}
+impl Game {
+    pub fn new(line: &str) -> Game {
+        let line = line.replace("Game ", "");
+        let line = line.split(": ").collect::<Vec<&str>>();
+        let id = line[0].parse::<i32>().unwrap();
+        let raw_rounds = line[1].split("; ").collect::<Vec<&str>>();
+        let mut rounds = Vec::new();
+        for raw_round in raw_rounds {
+            let mut round = Round {
+                red: 0,
+                blue: 0,
+                green: 0,
+            };
+            let colours_raw = raw_round.split(", ").collect::<Vec<&str>>();
+            for colour_raw in colours_raw {
+                let colour = colour_raw.split(" ").collect::<Vec<&str>>();
+                let num = colour[0].parse::<i32>().unwrap();
+                match colour[1] {
+                    "red" => round.red = num,
+                    "green" => round.green = num,
+                    "blue" => round.blue = num,
+                    _ => panic!("Unexpected input {}", colour[1]),
+                }
+            }
+            rounds.push(round)
+        }
+        Game { id, rounds }
+    }
+}
+
 impl Solution for Day02 {
-    type ParsedInput = String;
+    type ParsedInput = Vec<Game>;
 
     fn parse_input(input_lines: &str) -> Self::ParsedInput {
-        // Change the return type of this function by editing the ParsedInput type above.
-        // You can skip this and pass the raw string to each part.
-        // Alternatively, you can parse the input here, either working on the same mutable struct
-        // in parts one and two or passing a tuple with the data required for each part.
-        input_lines.to_string()
+        let input_lines = input_lines.to_string();
+        let input_lines = input_lines
+            .lines()
+            .map(String::from)
+            .collect::<Vec<String>>();
+
+        let mut games = Vec::new();
+        for line in input_lines {
+            games.push(Game::new(&line));
+        }
+        games
     }
 
     fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
+        for game in _parsed_input {
+            println!("{:?}", game);
+        }
         // TODO: implement part one
         0.to_string()
     }
