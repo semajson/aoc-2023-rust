@@ -1,4 +1,5 @@
 use crate::Solution;
+use regex::Regex;
 
 #[derive(Clone, Debug)]
 pub struct Day02;
@@ -16,17 +17,19 @@ impl Cubes {
             blue: 0,
             green: 0,
         };
-        let colours_raw = line.split(", ").collect::<Vec<&str>>();
-        for colour_raw in colours_raw {
-            let colour = colour_raw.split(' ').collect::<Vec<&str>>();
-            let num = colour[0].parse::<i32>().unwrap();
-            match colour[1] {
-                "red" => cubes.red = num,
-                "green" => cubes.green = num,
-                "blue" => cubes.blue = num,
-                _ => panic!("Unexpected input {}", colour[1]),
+        let re = Regex::new(r"(?<count>[0-9]+) (?<colour>[a-zA-Z]+)").unwrap();
+
+        for cap in re.captures_iter(line) {
+            let colour = cap.name("colour").unwrap().as_str();
+            let count = cap.name("count").unwrap().as_str().parse::<i32>().unwrap();
+            match colour {
+                "red" => cubes.red = count,
+                "green" => cubes.green = count,
+                "blue" => cubes.blue = count,
+                _ => panic!("Unexpected colour {}", colour),
             }
         }
+
         cubes
     }
 
@@ -58,10 +61,15 @@ pub struct Game {
 }
 impl Game {
     pub fn new(line: &str) -> Game {
-        let line = line.replace("Game ", "");
-        let line = line.split(": ").collect::<Vec<&str>>();
-        let id = line[0].parse::<i32>().unwrap();
-        let raw_rounds = line[1].split("; ").collect::<Vec<&str>>();
+        let re = Regex::new(r"Game (?<id>[0-9]+): (?<rounds>.+)").unwrap();
+        let Some(caps) = re.captures(line) else {
+            panic!("Didn't find game")
+        };
+
+        let id = caps["id"].parse::<i32>().unwrap();
+        let raw_rounds = &caps["rounds"];
+        let raw_rounds = raw_rounds.split("; ").collect::<Vec<&str>>();
+
         let mut rounds = Vec::new();
         for raw_round in raw_rounds {
             rounds.push(Cubes::new(raw_round))
@@ -78,11 +86,7 @@ impl Game {
         true
     }
     fn get_fewest_possible_cubes(&self) -> Cubes {
-        let mut fewest_cubes = Cubes {
-            red: 0,
-            blue: 0,
-            green: 0,
-        };
+        let mut fewest_cubes = Cubes::new("");
         for cubes in self.rounds.iter() {
             cubes.make_possible_with_fewest_cubes(&mut fewest_cubes);
         }
@@ -99,16 +103,7 @@ impl Solution for Day02 {
 
     fn parse_input(input_lines: &str) -> Self::ParsedInput {
         let input_lines = input_lines.to_string();
-        let input_lines = input_lines
-            .lines()
-            .map(String::from)
-            .collect::<Vec<String>>();
-
-        let mut games = Vec::new();
-        for line in input_lines {
-            games.push(Game::new(&line));
-        }
-        games
+        input_lines.lines().map(Game::new).collect::<Vec<Game>>()
     }
 
     fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
