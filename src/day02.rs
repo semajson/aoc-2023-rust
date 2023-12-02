@@ -73,7 +73,7 @@ impl Game {
         }
         true
     }
-    fn fewest_possible_cubes(&self) -> Cubes {
+    fn get_fewest_possible_cubes(&self) -> Cubes {
         let mut fewest_cubes = Cubes {
             red: 0,
             blue: 0,
@@ -85,7 +85,7 @@ impl Game {
         fewest_cubes
     }
     fn power(&self) -> i32 {
-        let fewest_cubes = self.fewest_possible_cubes();
+        let fewest_cubes = self.get_fewest_possible_cubes();
         fewest_cubes.power()
     }
 }
