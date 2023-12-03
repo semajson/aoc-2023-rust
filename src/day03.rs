@@ -1,11 +1,11 @@
-use std::f32::NEG_INFINITY;
+use std::collections::HashSet;
 
 use crate::Solution;
 
 #[derive(Clone, Debug)]
 pub struct Day03;
 
-#[derive(Clone, Debug, PartialEq, Hash)]
+#[derive(Clone, Debug, PartialEq, Hash, Eq)]
 pub struct Point {
     x: isize,
     y: isize,
@@ -26,12 +26,16 @@ impl Point {
 
         neighbors
     }
+
+    pub fn get_neighbors_set(&self) -> HashSet<Point> {
+        HashSet::from_iter(self.get_neighbors())
+    }
 }
 
 #[derive(Clone, Debug)]
 pub struct Number {
     value: isize,
-    coords: Vec<Point>,
+    coords: HashSet<Point>,
 }
 
 #[derive(Clone, Debug)]
@@ -50,8 +54,8 @@ impl Grid {
                 let value = self.0[y][x];
                 if value.is_ascii_digit() && ((x == 0) || !self.0[y][x - 1].is_ascii_digit()) {
                     // Start of a number.
-                    let mut coords = Vec::new();
-                    coords.push(Point {
+                    let mut coords = HashSet::new();
+                    coords.insert(Point {
                         x: x as isize,
                         y: y as isize,
                     });
@@ -60,7 +64,7 @@ impl Grid {
                     let mut number_value = String::from(value);
 
                     while (next_x < self.x_max()) && self.0[y][next_x].is_ascii_digit() {
-                        coords.push(Point {
+                        coords.insert(Point {
                             x: next_x as isize,
                             y: y as isize,
                         });
@@ -78,12 +82,10 @@ impl Grid {
     }
 
     pub fn get_part_numbers(&self) -> Vec<Number> {
-        let all_numbers = self.get_all_numbers();
-
         let mut part_numbers = Vec::new();
 
-        for number in all_numbers {
-            let neighbors = self.get_neighbors(&number);
+        for number in self.get_all_numbers() {
+            let neighbors = self.get_number_neighbors(&number);
             if neighbors.iter().any(|neighbor| self.is_symbol(&neighbor)) {
                 part_numbers.push(number);
             }
@@ -92,23 +94,30 @@ impl Grid {
         part_numbers
     }
 
-    fn get_neighbors(&self, number: &Number) -> Vec<Point> {
-        let mut neighbors = vec![];
+    fn get_number_neighbors(&self, number: &Number) -> HashSet<Point> {
+        let mut neighbors = HashSet::new();
 
         for coord in number.coords.iter() {
-            let coord = coord.clone(); // todo, fix?
-            let coord_neighbors = coord
-                .get_neighbors()
+            let coord_neighbors = self
+                .get_point_neighbors(&coord)
                 .into_iter()
-                .filter(|point| self.point_in_grid(point))
                 .filter(|point| (!number.coords.contains(point)))
                 .filter(|point| (!neighbors.contains(point)))
-                .collect::<Vec<Point>>();
+                .collect::<HashSet<Point>>();
 
             neighbors.extend(coord_neighbors);
         }
         neighbors
     }
+
+    fn get_point_neighbors(&self, point: &Point) -> HashSet<Point> {
+        point
+            .get_neighbors_set()
+            .into_iter()
+            .filter(|point| self.point_in_grid(point))
+            .collect::<HashSet<Point>>()
+    }
+
     fn point_in_grid(&self, point: &Point) -> bool {
         (point.x >= 0)
             && (point.x < self.x_max() as isize)
@@ -119,6 +128,47 @@ impl Grid {
     fn is_symbol(&self, point: &Point) -> bool {
         let value = self.0[point.y as usize][point.x as usize];
         (!value.is_ascii_digit()) && value != '.'
+    }
+
+    fn get_potential_gears(&self) -> Vec<Point> {
+        let mut potential_gears = vec![];
+        for y in 0..self.y_max() {
+            for x in 0..self.x_max() {
+                if self.0[y][x] == '*' {
+                    potential_gears.push(Point {
+                        x: x as isize,
+                        y: y as isize,
+                    });
+                }
+            }
+        }
+        potential_gears
+    }
+
+    fn get_ratios(&self) -> Vec<isize> {
+        let mut gear_ratios = vec![];
+
+        let potential_gears = self.get_potential_gears();
+
+        let part_numbers = self.get_part_numbers();
+
+        for potential_gear in potential_gears {
+            let potential_gear_neighbors = self.get_point_neighbors(&potential_gear);
+
+            let mut matching_part_numbers = vec![];
+
+            for part_number in part_numbers.iter() {
+                if !part_number.coords.is_disjoint(&potential_gear_neighbors) {
+                    matching_part_numbers.push(part_number);
+                }
+            }
+
+            if matching_part_numbers.len() == 2 {
+                gear_ratios.push(matching_part_numbers[0].value * matching_part_numbers[1].value);
+            }
+        }
+
+        gear_ratios
     }
 }
 
@@ -136,10 +186,7 @@ impl Solution for Day03 {
     }
 
     fn part_one(grid: &mut Self::ParsedInput) -> String {
-        // TODO: implement part one
         let part_numbers = grid.get_part_numbers();
-
-        // println!("{:?}", part_numbers);
 
         let sum: isize = part_numbers
             .iter()
@@ -149,9 +196,9 @@ impl Solution for Day03 {
         sum.to_string()
     }
 
-    fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        // TODO: implement part two
-        0.to_string()
+    fn part_two(grid: &mut Self::ParsedInput) -> String {
+        let sum: isize = grid.get_ratios().iter().sum();
+        sum.to_string()
     }
 }
 
@@ -193,7 +240,7 @@ mod tests {
 ...$.*....
 .664.598.."
             ),
-            "0".to_string()
+            "467835".to_string()
         )
     }
 
