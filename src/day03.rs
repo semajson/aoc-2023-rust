@@ -51,34 +51,40 @@ impl Grid {
         let mut numbers = Vec::new();
         for y in 0..self.y_max() {
             for x in 0..self.x_max() {
-                let value = self.0[y][x];
-                if value.is_ascii_digit() && ((x == 0) || !self.0[y][x - 1].is_ascii_digit()) {
-                    // Start of a number.
-                    let mut coords = HashSet::new();
-                    coords.insert(Point {
-                        x: x as isize,
-                        y: y as isize,
-                    });
-
-                    let mut next_x = x + 1;
-                    let mut number_value = String::from(value);
-
-                    while (next_x < self.x_max()) && self.0[y][next_x].is_ascii_digit() {
-                        coords.insert(Point {
-                            x: next_x as isize,
-                            y: y as isize,
-                        });
-                        number_value.push(self.0[y][next_x]);
-                        next_x += 1;
-                    }
-                    numbers.push(Number {
-                        value: number_value.parse::<isize>().unwrap(),
-                        coords,
-                    })
+                if self.is_start_of_number(x, y) {
+                    numbers.push(self.get_full_number(x, y))
                 }
             }
         }
         numbers
+    }
+
+    fn is_start_of_number(&self, x: usize, y: usize) -> bool {
+        self.0[y][x].is_ascii_digit() && ((x == 0) || !self.0[y][x - 1].is_ascii_digit())
+    }
+
+    fn get_full_number(&self, x: usize, y: usize) -> Number {
+        let mut number_value = String::from(self.0[y][x]);
+        let mut coords = HashSet::new();
+        coords.insert(Point {
+            x: x as isize,
+            y: y as isize,
+        });
+
+        let mut next_x = x + 1;
+        while (next_x < self.x_max()) && self.0[y][next_x].is_ascii_digit() {
+            coords.insert(Point {
+                x: next_x as isize,
+                y: y as isize,
+            });
+            number_value.push(self.0[y][next_x]);
+            next_x += 1;
+        }
+
+        Number {
+            value: number_value.parse::<isize>().unwrap(),
+            coords,
+        }
     }
 
     pub fn get_part_numbers(&self) -> Vec<Number> {
@@ -130,6 +136,42 @@ impl Grid {
         (!value.is_ascii_digit()) && value != '.'
     }
 
+    fn get_ratios(&self) -> Vec<isize> {
+        let mut gear_ratios = vec![];
+
+        let potential_gears = self.get_potential_gears();
+
+        let part_numbers = self.get_part_numbers();
+
+        for potential_gear in potential_gears {
+            let matching_part_numbers =
+                self.get_surrounding_part_numbers(&potential_gear, &part_numbers);
+
+            if matching_part_numbers.len() == 2 {
+                gear_ratios.push(matching_part_numbers[0].value * matching_part_numbers[1].value);
+            }
+        }
+
+        gear_ratios
+    }
+
+    fn get_surrounding_part_numbers<'c>(
+        &self,
+        point: &Point,
+        part_numbers: &'c [Number],
+    ) -> Vec<&'c Number> {
+        let neighbors: HashSet<Point> = self.get_point_neighbors(point);
+
+        let mut matching_part_numbers = vec![];
+
+        for part_number in part_numbers.iter() {
+            if !part_number.coords.is_disjoint(&neighbors) {
+                matching_part_numbers.push(part_number);
+            }
+        }
+        matching_part_numbers
+    }
+
     fn get_potential_gears(&self) -> Vec<Point> {
         let mut potential_gears = vec![];
         for y in 0..self.y_max() {
@@ -143,32 +185,6 @@ impl Grid {
             }
         }
         potential_gears
-    }
-
-    fn get_ratios(&self) -> Vec<isize> {
-        let mut gear_ratios = vec![];
-
-        let potential_gears = self.get_potential_gears();
-
-        let part_numbers = self.get_part_numbers();
-
-        for potential_gear in potential_gears {
-            let potential_gear_neighbors = self.get_point_neighbors(&potential_gear);
-
-            let mut matching_part_numbers = vec![];
-
-            for part_number in part_numbers.iter() {
-                if !part_number.coords.is_disjoint(&potential_gear_neighbors) {
-                    matching_part_numbers.push(part_number);
-                }
-            }
-
-            if matching_part_numbers.len() == 2 {
-                gear_ratios.push(matching_part_numbers[0].value * matching_part_numbers[1].value);
-            }
-        }
-
-        gear_ratios
     }
 }
 
