@@ -120,11 +120,11 @@ impl Grid {
         point
             .get_neighbors_set()
             .into_iter()
-            .filter(|point| self.point_in_grid(point))
+            .filter(|point| self.is_point_in_grid(point))
             .collect::<HashSet<Point>>()
     }
 
-    fn point_in_grid(&self, point: &Point) -> bool {
+    fn is_point_in_grid(&self, point: &Point) -> bool {
         (point.x >= 0)
             && (point.x < self.x_max() as isize)
             && (point.y >= 0)
