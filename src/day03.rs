@@ -86,7 +86,7 @@ impl Grid {
 
         for number in self.get_all_numbers() {
             let neighbors = self.get_number_neighbors(&number);
-            if neighbors.iter().any(|neighbor| self.is_symbol(&neighbor)) {
+            if neighbors.iter().any(|neighbor| self.is_symbol(neighbor)) {
                 part_numbers.push(number);
             }
         }
@@ -99,7 +99,7 @@ impl Grid {
 
         for coord in number.coords.iter() {
             let coord_neighbors = self
-                .get_point_neighbors(&coord)
+                .get_point_neighbors(coord)
                 .into_iter()
                 .filter(|point| (!number.coords.contains(point)))
                 .filter(|point| (!neighbors.contains(point)))
@@ -192,7 +192,6 @@ impl Solution for Day03 {
             .iter()
             .map(|part_number| part_number.value)
             .sum();
-        ();
         sum.to_string()
     }
 
