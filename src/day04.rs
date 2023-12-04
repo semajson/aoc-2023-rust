@@ -6,7 +6,7 @@ use std::collections::HashSet;
 pub struct Day04;
 
 pub struct Card {
-    number: usize,
+    // number: usize,
     winning_numbers: HashSet<usize>,
     my_numbers: HashSet<usize>,
 }
@@ -14,8 +14,11 @@ impl Card {
     pub fn get_my_winning_numbers(&self) -> HashSet<usize> {
         self.winning_numbers
             .intersection(&self.my_numbers)
-            .map(|x| x.clone())
+            .cloned()
             .collect()
+    }
+    pub fn num_matches(&self) -> usize {
+        self.get_my_winning_numbers().len()
     }
 }
 
@@ -30,41 +33,28 @@ impl Solution for Day04 {
 
         let mut cards = vec![];
 
+        // TODO, remove get_hashset and go full regex to get this!
+        fn get_hashset(raw: &str) -> HashSet<usize> {
+            raw.split_whitespace()
+                .filter(|&x| !x.is_empty())
+                .collect::<Vec<&str>>()
+                .into_iter()
+                .map(|x| x.parse::<usize>().unwrap())
+                .collect::<HashSet<usize>>()
+        }
+
         for cap in re.captures_iter(input_lines) {
-            let number = cap
+            let _number = cap
                 .name("number")
                 .unwrap()
                 .as_str()
                 .parse::<usize>()
                 .unwrap();
 
-            let my_numbers = cap
-                .name("my_numbers")
-                .unwrap()
-                .as_str()
-                .split_whitespace()
-                .filter(|&x| x.len() != 0)
-                .collect::<Vec<&str>>()
-                .into_iter()
-                .map(|x| x.parse::<usize>().unwrap())
-                .collect::<HashSet<usize>>();
-
-            let winning_numbers = cap
-                .name("winning_numbers")
-                .unwrap()
-                .as_str()
-                .split(" ")
-                .filter(|&x| x.len() != 0)
-                .collect::<Vec<&str>>()
-                .into_iter()
-                .map(|x| x.parse::<usize>().unwrap())
-                .collect::<HashSet<usize>>();
-
-            // assert!(winning_numbers.len() == 10);
-            // assert!(my_numbers.len() == 25);
+            let my_numbers = get_hashset(cap.name("my_numbers").unwrap().as_str());
+            let winning_numbers = get_hashset(cap.name("winning_numbers").unwrap().as_str());
 
             cards.push(Card {
-                number,
                 my_numbers,
                 winning_numbers,
             })
@@ -76,11 +66,10 @@ impl Solution for Day04 {
     fn part_one(cards: &mut Self::ParsedInput) -> String {
         let mut total_points = 0;
         for card in cards {
-            let my_winning_numbers = card.get_my_winning_numbers();
+            let num_matches = card.num_matches();
 
-            let num_my_winning_numbers = my_winning_numbers.len();
-            if num_my_winning_numbers > 0 {
-                total_points += 2_i64.pow(num_my_winning_numbers as u32 - 1)
+            if num_matches > 0 {
+                total_points += 2_i64.pow(num_matches as u32 - 1)
             }
         }
         total_points.to_string()
@@ -89,11 +78,10 @@ impl Solution for Day04 {
     fn part_two(cards: &mut Self::ParsedInput) -> String {
         let mut copies = vec![1; cards.len()];
         for (i, card) in cards.iter().enumerate() {
-            let num_matches = card.get_my_winning_numbers().len();
+            let num_matches = card.num_matches();
             for j in 1..=num_matches {
-                if (i + j) < cards.len() {
-                    copies[i + j] += copies[i];
-                }
+                assert!((i + j) < cards.len());
+                copies[i + j] += copies[i];
             }
         }
         let sum: usize = copies.iter().sum();
