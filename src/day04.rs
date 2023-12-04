@@ -86,9 +86,18 @@ impl Solution for Day04 {
         total_points.to_string()
     }
 
-    fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        // TODO: implement part two
-        0.to_string()
+    fn part_two(cards: &mut Self::ParsedInput) -> String {
+        let mut copies = vec![1; cards.len()];
+        for (i, card) in cards.iter().enumerate() {
+            let num_matches = card.get_my_winning_numbers().len();
+            for j in 1..=num_matches {
+                if (i + j) < cards.len() {
+                    copies[i + j] += copies[i];
+                }
+            }
+        }
+        let sum: usize = copies.iter().sum();
+        sum.to_string()
     }
 }
 
@@ -133,7 +142,7 @@ Card 4: 41 92 73 84 69 | 59 84 76 51 58  5 54 83
 Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
 Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"
             ),
-            "0".to_string()
+            "30".to_string()
         )
     }
 
