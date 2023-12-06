@@ -1,22 +1,128 @@
 use crate::Solution;
+use regex::Regex;
+use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
+
+pub struct Rule {
+    dest_start: isize,
+    src_start: isize,
+    range_len: isize,
+}
+impl Rule {
+    pub fn new(raw: &str) -> Rule {
+        let re = Regex::new(r"(?<dest_start>\d+) (?<src_start>\d+) (?<range_len>\d+)").unwrap();
+        let Some(cap) = re.captures(raw) else {
+            panic!("Didn't find game")
+        };
+        let dest_start = cap
+            .name("dest_start")
+            .unwrap()
+            .as_str()
+            .parse::<isize>()
+            .unwrap();
+        let src_start = cap
+            .name("src_start")
+            .unwrap()
+            .as_str()
+            .parse::<isize>()
+            .unwrap();
+        let range_len = cap
+            .name("range_len")
+            .unwrap()
+            .as_str()
+            .parse::<isize>()
+            .unwrap();
+        Rule {
+            dest_start,
+            src_start,
+            range_len,
+        }
+    }
+    pub fn num_in_rule(&self, num: isize) -> bool {
+        ((num - self.src_start >= 0) && ((num - self.src_start) < self.range_len))
+    }
+    pub fn output(&self, num: isize) -> isize {
+        self.dest_start + num - self.src_start
+    }
+}
+
+pub struct Map(Vec<Rule>);
+impl Map {
+    pub fn get_output(&self, input: isize) -> isize {
+        for rule in self.0.iter() {
+            if rule.num_in_rule(input) {
+                return rule.output(input);
+            }
+        }
+        input
+    }
+}
+
+pub struct Seeds(Vec<isize>);
+
+#[derive(Clone, Debug, PartialEq, Hash, Eq)]
+
 pub struct Day05;
 
 impl Solution for Day05 {
-    type ParsedInput = String;
+    type ParsedInput = (Vec<isize>, HashMap<String, (String, Map)>);
 
     fn parse_input(input_lines: &str) -> Self::ParsedInput {
-        // Change the return type of this function by editing the ParsedInput type above.
-        // You can skip this and pass the raw string to each part.
-        // Alternatively, you can parse the input here, either working on the same mutable struct
-        // in parts one and two or passing a tuple with the data required for each part.
-        input_lines.to_string()
+        let re = Regex::new(r"seeds:(?<seeds>( [0-9]+)+)").unwrap();
+        let Some(cap) = re.captures(input_lines) else {
+            panic!("Didn't find game")
+        };
+        let seeds = cap
+            .name("seeds")
+            .unwrap()
+            .as_str()
+            .split_whitespace()
+            .filter(|&x| !x.is_empty())
+            .map(|x| x.parse::<isize>().unwrap())
+            .collect::<Vec<isize>>();
+
+        let re = Regex::new(
+            r"(?<source>[a-z]+)-to-(?<destination>[a-z]+) map:
+(?<map>([0-9]+ [0-9]+ [0-9]+
+?)+)",
+        )
+        .unwrap();
+
+        let mut maps = HashMap::new();
+
+        for cap in re.captures_iter(input_lines) {
+            let src = cap.name("source").unwrap().as_str().to_string();
+            let dest = cap.name("destination").unwrap().as_str().to_string();
+            let map = cap
+                .name("map")
+                .unwrap()
+                .as_str()
+                .split('\n')
+                .filter(|&x| !x.is_empty())
+                .map(|x| Rule::new(x))
+                .collect::<Vec<Rule>>();
+
+            maps.insert(src, (dest, Map(map)));
+        }
+
+        // println!("{:?}", re.captures(input_lines));
+
+        (seeds, maps)
     }
 
     fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
         // TODO: implement part one
-        0.to_string()
+        let mut src = "seed";
+        let (inputs, maps) = _parsed_input;
+        let mut inputs = inputs.clone();
+
+        while src != "location" {
+            let (next_src, map) = maps.get(src).unwrap();
+            inputs = inputs.into_iter().map(|x| map.get_output(x)).collect();
+            src = next_src;
+        }
+        inputs.iter().min().unwrap().to_string()
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
@@ -31,7 +137,44 @@ mod tests {
 
     #[test]
     fn check_day05_part1_case1() {
-        assert_eq!(Day05::solve_part_one(""), "0".to_string())
+        assert_eq!(
+            Day05::solve_part_one(
+                "seeds: 79 14 55 13
+
+seed-to-soil map:
+50 98 2
+52 50 48
+
+soil-to-fertilizer map:
+0 15 37
+37 52 2
+39 0 15
+
+fertilizer-to-water map:
+49 53 8
+0 11 42
+42 0 7
+57 7 4
+
+water-to-light map:
+88 18 7
+18 25 70
+
+light-to-temperature map:
+45 77 23
+81 45 19
+68 64 13
+
+temperature-to-humidity map:
+0 69 1
+1 0 69
+
+humidity-to-location map:
+60 56 37
+56 93 4"
+            ),
+            "35".to_string()
+        )
     }
 
     #[test]
