@@ -13,34 +13,25 @@ impl Rule {
     pub fn new(raw: &str) -> Rule {
         let re = Regex::new(r"(?<dest_start>\d+) (?<src_start>\d+) (?<range_len>\d+)").unwrap();
         let Some(cap) = re.captures(raw) else {
-            panic!("Didn't find game")
+            panic!("No match")
         };
-        let dest_start = cap
-            .name("dest_start")
-            .unwrap()
-            .as_str()
-            .parse::<isize>()
-            .unwrap();
-        let src_start = cap
-            .name("src_start")
-            .unwrap()
-            .as_str()
-            .parse::<isize>()
-            .unwrap();
-        let range_len = cap
-            .name("range_len")
-            .unwrap()
-            .as_str()
-            .parse::<isize>()
-            .unwrap();
+
+        fn get_group_from_cap(group: &str, cap: &regex::Captures) -> isize {
+            cap.name(group).unwrap().as_str().parse::<isize>().unwrap()
+        }
+
+        let dest_start = get_group_from_cap("dest_start", &cap);
+        let src_start = get_group_from_cap("src_start", &cap);
+        let range_len = get_group_from_cap("range_len", &cap);
+
         Rule {
             dest_start,
             src_start,
             range_len,
         }
     }
-    pub fn num_in_rule(&self, num: isize) -> bool {
-        ((num - self.src_start >= 0) && ((num - self.src_start) < self.range_len))
+    pub fn is_num_in_rule(&self, num: isize) -> bool {
+        (num - self.src_start >= 0) && ((num - self.src_start) < self.range_len)
     }
     pub fn output(&self, num: isize) -> isize {
         self.dest_start + num - self.src_start
@@ -49,12 +40,21 @@ impl Rule {
 
 pub struct Map(Vec<Rule>);
 impl Map {
+    pub fn new(raw: &str) -> Map {
+        Map(raw
+            .split('\n')
+            .filter(|&x| !x.is_empty())
+            .map(Rule::new)
+            .collect::<Vec<Rule>>())
+    }
     pub fn get_output(&self, input: isize) -> isize {
         for rule in self.0.iter() {
-            if rule.num_in_rule(input) {
+            if rule.is_num_in_rule(input) {
                 return rule.output(input);
             }
         }
+
+        // No rules apply, just return the input
         input
     }
 }
@@ -68,7 +68,6 @@ pub struct Day05;
 fn get_final_value(mut input: isize, maps: &HashMap<String, (String, Map)>) -> isize {
     let mut src = "seed";
 
-    // return 0.to_string();
     while src != "location" {
         let (next_src, map) = maps.get(src).unwrap();
         input = map.get_output(input);
@@ -83,7 +82,7 @@ impl Solution for Day05 {
     fn parse_input(input_lines: &str) -> Self::ParsedInput {
         let re = Regex::new(r"seeds:(?<seeds>( [0-9]+)+)").unwrap();
         let Some(cap) = re.captures(input_lines) else {
-            panic!("Didn't find game")
+            panic!("Didn't find the seeds")
         };
         let seeds = cap
             .name("seeds")
@@ -106,25 +105,15 @@ impl Solution for Day05 {
         for cap in re.captures_iter(input_lines) {
             let src = cap.name("source").unwrap().as_str().to_string();
             let dest = cap.name("destination").unwrap().as_str().to_string();
-            let map = cap
-                .name("map")
-                .unwrap()
-                .as_str()
-                .split('\n')
-                .filter(|&x| !x.is_empty())
-                .map(|x| Rule::new(x))
-                .collect::<Vec<Rule>>();
+            let map = Map::new(cap.name("map").unwrap().as_str());
 
-            maps.insert(src, (dest, Map(map)));
+            maps.insert(src, (dest, map));
         }
-
-        // println!("{:?}", re.captures(input_lines));
 
         (seeds, maps)
     }
 
     fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
-        // TODO: implement part one
         let mut src = "seed";
         let (inputs, maps) = _parsed_input;
         let mut inputs = inputs.clone();
@@ -138,8 +127,6 @@ impl Solution for Day05 {
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        // TODO: implement part two
-        let mut src = "seed";
         let (seed_ranges, maps) = _parsed_input;
 
         let mut min = 100000000000000000;
@@ -148,7 +135,6 @@ impl Solution for Day05 {
             let range = seed_ranges[i * 2 + 1];
 
             for j in 0..range {
-                // inputs.push(start + j);
                 let output = get_final_value(start + j, maps);
                 if output < min {
                     min = output;
@@ -250,6 +236,44 @@ humidity-to-location map:
 
     #[test]
     fn check_day05_both_case1() {
-        assert_eq!(Day05::solve("", false), ("0".to_string(), "0".to_string()))
+        assert_eq!(
+            Day05::solve(
+                "seeds: 79 14 55 13
+
+seed-to-soil map:
+50 98 2
+52 50 48
+
+soil-to-fertilizer map:
+0 15 37
+37 52 2
+39 0 15
+
+fertilizer-to-water map:
+49 53 8
+0 11 42
+42 0 7
+57 7 4
+
+water-to-light map:
+88 18 7
+18 25 70
+
+light-to-temperature map:
+45 77 23
+81 45 19
+68 64 13
+
+temperature-to-humidity map:
+0 69 1
+1 0 69
+
+humidity-to-location map:
+60 56 37
+56 93 4",
+                false
+            ),
+            ("35".to_string(), "46".to_string())
+        )
     }
 }
