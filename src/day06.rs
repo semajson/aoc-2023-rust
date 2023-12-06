@@ -43,12 +43,11 @@ fn parse_1(input_lines: &str) -> Vec<Race> {
     let times = get_numbers_after_word("Time:", input_lines);
     let distances = get_numbers_after_word("Distance:", input_lines);
 
-    let races = times
+    times
         .into_iter()
         .zip(distances)
         .map(Race::new)
-        .collect::<Vec<Race>>();
-    races
+        .collect::<Vec<Race>>()
 }
 
 fn parse_2(input_lines: &str) -> Vec<Race> {
@@ -70,12 +69,11 @@ fn parse_2(input_lines: &str) -> Vec<Race> {
     let times = get_number_after_word("Time:", input_lines);
     let distances = get_number_after_word("Distance:", input_lines);
 
-    let races = times
+    times
         .into_iter()
         .zip(distances)
         .map(Race::new)
-        .collect::<Vec<Race>>();
-    races
+        .collect::<Vec<Race>>()
 }
 
 impl Solution for Day06 {
@@ -86,7 +84,7 @@ impl Solution for Day06 {
     }
 
     fn part_one(input_lines: &mut Self::ParsedInput) -> String {
-        let races = parse_1(&input_lines);
+        let races = parse_1(input_lines);
 
         let mut output = 1;
 
@@ -97,7 +95,7 @@ impl Solution for Day06 {
     }
 
     fn part_two(input_lines: &mut Self::ParsedInput) -> String {
-        let races = parse_2(&input_lines);
+        let races = parse_2(input_lines);
 
         let mut output = 1;
 
