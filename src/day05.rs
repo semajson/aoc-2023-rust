@@ -65,6 +65,18 @@ pub struct Seeds(Vec<isize>);
 
 pub struct Day05;
 
+fn get_final_value(mut input: isize, maps: &HashMap<String, (String, Map)>) -> isize {
+    let mut src = "seed";
+
+    // return 0.to_string();
+    while src != "location" {
+        let (next_src, map) = maps.get(src).unwrap();
+        input = map.get_output(input);
+        src = next_src;
+    }
+    input
+}
+
 impl Solution for Day05 {
     type ParsedInput = (Vec<isize>, HashMap<String, (String, Map)>);
 
@@ -127,7 +139,24 @@ impl Solution for Day05 {
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
         // TODO: implement part two
-        0.to_string()
+        let mut src = "seed";
+        let (seed_ranges, maps) = _parsed_input;
+
+        let mut min = 100000000000000000;
+        for i in 0..(seed_ranges.len() / 2) {
+            let start = seed_ranges[i * 2];
+            let range = seed_ranges[i * 2 + 1];
+
+            for j in 0..range {
+                // inputs.push(start + j);
+                let output = get_final_value(start + j, maps);
+                if output < min {
+                    min = output;
+                }
+            }
+        }
+
+        min.to_string()
     }
 }
 
@@ -179,7 +208,44 @@ humidity-to-location map:
 
     #[test]
     fn check_day05_part2_case1() {
-        assert_eq!(Day05::solve_part_two(""), "0".to_string())
+        assert_eq!(
+            Day05::solve_part_two(
+                "seeds: 79 14 55 13
+
+seed-to-soil map:
+50 98 2
+52 50 48
+
+soil-to-fertilizer map:
+0 15 37
+37 52 2
+39 0 15
+
+fertilizer-to-water map:
+49 53 8
+0 11 42
+42 0 7
+57 7 4
+
+water-to-light map:
+88 18 7
+18 25 70
+
+light-to-temperature map:
+45 77 23
+81 45 19
+68 64 13
+
+temperature-to-humidity map:
+0 69 1
+1 0 69
+
+humidity-to-location map:
+60 56 37
+56 93 4"
+            ),
+            "46".to_string()
+        )
     }
 
     #[test]
