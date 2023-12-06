@@ -130,9 +130,9 @@ impl Solution for Day05 {
         let (seed_ranges, maps) = _parsed_input;
 
         let mut min = 100000000000000000;
-        for i in 0..(seed_ranges.len() / 2) {
-            let start = seed_ranges[i * 2];
-            let range = seed_ranges[i * 2 + 1];
+        for chunk in seed_ranges.chunks(2) {
+            let start = chunk[0];
+            let range = chunk[1];
 
             for j in 0..range {
                 let output = get_final_value(start + j, maps);
