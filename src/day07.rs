@@ -106,13 +106,12 @@ impl Hand {
 
         let mut current_match = vec![sorted_hand[0]];
 
-        for i in 1..sorted_hand.len() {
-            let next_char = sorted_hand[i];
-            if current_match[0] == next_char {
-                current_match.push(next_char)
+        for card in sorted_hand.into_iter().skip(1) {
+            if current_match[0] == card {
+                current_match.push(card)
             } else {
                 self.add_match(current_match);
-                current_match = vec![next_char];
+                current_match = vec![card];
             }
         }
         self.add_match(current_match);
@@ -199,10 +198,10 @@ impl Hand {
                 0 => HandType::OnePair,
                 _ => panic!("Error for hand {:?}", self),
             }
-        } else if self.pairs.len() == 0
-            && self.threes.len() == 0
-            && self.fours.len() == 0
-            && self.fives.len() == 0
+        } else if self.pairs.is_empty()
+            && self.threes.is_empty()
+            && self.fours.is_empty()
+            && self.fives.is_empty()
             && self.ones.len() == 5
         {
             match num_jokers {
@@ -234,7 +233,7 @@ impl PartialEq for Hand {
 impl Eq for Hand {}
 impl PartialOrd for Hand {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 impl Ord for Hand {
@@ -245,15 +244,15 @@ impl Ord for Hand {
             // Are the same type
             // As the spec, iterate through the original string
             if self.jokers {
-                return self.compare_hands_fallback(other, strength_jokers);
+                self.compare_hands_fallback(other, strength_jokers)
             } else {
-                return self.compare_hands_fallback(other, strength);
+                self.compare_hands_fallback(other, strength)
             }
         }
     }
 }
 
-pub fn get_total_winnings(hands: &mut Vec<Hand>) -> isize {
+pub fn get_total_winnings(hands: &mut [Hand]) -> isize {
     hands.sort();
 
     let mut sum = 0;
