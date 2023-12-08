@@ -32,6 +32,24 @@ fn strength(card: &char) -> usize {
         _ => panic!("Error"),
     }
 }
+fn strength_jokers(card: &char) -> usize {
+    match card {
+        'A' => 14,
+        'K' => 13,
+        'Q' => 12,
+        'J' => 1,
+        'T' => 10,
+        '9' => 9,
+        '8' => 8,
+        '7' => 7,
+        '6' => 6,
+        '5' => 5,
+        '4' => 4,
+        '3' => 3,
+        '2' => 2,
+        _ => panic!("Error"),
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct Hand {
@@ -137,8 +155,8 @@ impl Hand {
             HandType::FiveOfAKind
         } else if self.fours.len() == 1 {
             match num_jokers {
-                1 => HandType::FiveOfAKind,
-                _ => HandType::FourOfAKind,
+                0_ => HandType::FourOfAKind,
+                _ => HandType::FiveOfAKind,
             }
         } else if self.threes.len() == 1 && self.pairs.len() == 1 {
             match num_jokers {
@@ -147,8 +165,8 @@ impl Hand {
             }
         } else if self.threes.len() == 1 {
             match num_jokers {
-                1 => HandType::FourOfAKind,
-                _ => HandType::ThreeOfAKind,
+                0 => HandType::ThreeOfAKind,
+                _ => HandType::FourOfAKind,
             }
         } else if self.pairs.len() == 2 {
             match num_jokers {
@@ -158,12 +176,12 @@ impl Hand {
             }
         } else if self.pairs.len() == 1 {
             match num_jokers {
-                1 => HandType::ThreeOfAKind,
-                _ => HandType::TwoPair,
+                0 => HandType::OnePair,
+                _ => HandType::ThreeOfAKind,
             }
         } else {
             match num_jokers {
-                1 => HandType::TwoPair,
+                1 => HandType::ThreeOfAKind,
                 _ => HandType::HighCard,
             }
         }
@@ -187,12 +205,15 @@ impl Ord for Hand {
         } else {
             // Are the same type
             // As the spec, iterate through the original string
-            for i in 0..self.hand.len() {
-                if self.hand[i] != other.hand[i] {
-                    return strength(&self.hand[i]).cmp(&strength(&other.hand[i]));
-                }
+            if self.jokers {
+                let our_strengths: Vec<usize> = self.hand.iter().map(strength_jokers).collect();
+                let other_strengths: Vec<usize> = other.hand.iter().map(strength_jokers).collect();
+                return our_strengths.cmp(&other_strengths);
+            } else {
+                let our_strengths: Vec<usize> = self.hand.iter().map(strength).collect();
+                let other_strengths: Vec<usize> = other.hand.iter().map(strength).collect();
+                return our_strengths.cmp(&other_strengths);
             }
-            self.hand[0].cmp(&other.hand[0]) // todo make equal
         }
     }
 }
@@ -234,8 +255,21 @@ impl Solution for Day07 {
     }
 
     fn part_two(hands: &mut Self::ParsedInput) -> String {
-        // TODO: implement part two
-        0.to_string()
+        for hand in hands.iter_mut() {
+            // hand.order_by_matches();
+            hand.jokers = true;
+            hand.analyse()
+        }
+        hands.sort();
+        // TODO: implement part one
+
+        let mut sum = 0;
+        for (i, hand) in hands.iter_mut().enumerate() {
+            sum += hand.bid * (i as isize + 1);
+        }
+
+        println!("test");
+        sum.to_string()
     }
 }
 
@@ -284,7 +318,24 @@ KK677 28
 KTJJT 220
 QQQJA 483"
             ),
-            "0".to_string()
+            "5905".to_string()
+        )
+    }
+
+    #[test]
+    fn check_day07_part2_case2() {
+        assert_eq!(
+            Day07::solve_part_two(
+                "AAAA3 1
+AAJ32 1
+JJ345 1
+AAAAJ 1
+JJAAA 1
+JJAA2 1
+AAAA2 1
+AAA22 1"
+            ),
+            "5".to_string()
         )
     }
 
