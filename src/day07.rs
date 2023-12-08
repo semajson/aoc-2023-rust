@@ -37,7 +37,6 @@ fn strength_jokers(card: &char) -> usize {
         'A' => 14,
         'K' => 13,
         'Q' => 12,
-        'J' => 1,
         'T' => 10,
         '9' => 9,
         '8' => 8,
@@ -47,6 +46,7 @@ fn strength_jokers(card: &char) -> usize {
         '4' => 4,
         '3' => 3,
         '2' => 2,
+        'J' => 1,
         _ => panic!("Error"),
     }
 }
@@ -83,13 +83,26 @@ impl Hand {
         }
     }
     pub fn analyse(&mut self) {
+        if self.hand_type != HandType::Unknown {
+            panic!("Error, already called analyse for {:?}", self);
+        }
         self.find_matches();
         self.set_type();
     }
+    pub fn analyse_with_jokeers(&mut self) {
+        if self.hand_type != HandType::Unknown {
+            panic!("Error, already called analyse_with_jokeers for {:?}", self);
+        }
+
+        self.jokers = true;
+        self.find_matches();
+        self.set_type();
+    }
+
     fn find_matches(&mut self) {
-        // SOrt is very important here
+        // Sort is very important here
         let mut sorted_hand = self.hand.clone();
-        sorted_hand.sort_by(|a, b| a.cmp(&b));
+        sorted_hand.sort();
 
         let mut current_match = vec![sorted_hand[0]];
 
@@ -103,8 +116,6 @@ impl Hand {
             }
         }
         self.add_match(current_match);
-
-        self.set_type();
     }
 
     fn add_match(&mut self, found_match: Vec<char>) {
@@ -120,7 +131,7 @@ impl Hand {
             3 => self.threes.push(found_match),
             4 => self.fours.push(found_match),
             5 => self.fives.push(found_match),
-            _ => panic!("Unexpected length"),
+            _ => panic!("Unexpected length for {:?}", self),
         }
     }
 
@@ -155,38 +166,66 @@ impl Hand {
             HandType::FiveOfAKind
         } else if self.fours.len() == 1 {
             match num_jokers {
-                0_ => HandType::FourOfAKind,
-                _ => HandType::FiveOfAKind,
+                4 => HandType::FiveOfAKind,
+                1 => HandType::FiveOfAKind,
+                0 => HandType::FourOfAKind,
+                _ => panic!("Error for hand {:?}", self),
             }
         } else if self.threes.len() == 1 && self.pairs.len() == 1 {
             match num_jokers {
+                3 => HandType::FiveOfAKind,
+                2 => HandType::FiveOfAKind,
                 0 => HandType::FullHouse,
-                _ => HandType::FiveOfAKind,
+                _ => panic!("Error for hand {:?}", self),
             }
         } else if self.threes.len() == 1 {
             match num_jokers {
+                3 => HandType::FourOfAKind,
+                1 => HandType::FourOfAKind,
                 0 => HandType::ThreeOfAKind,
-                _ => HandType::FourOfAKind,
+                _ => panic!("Error for hand {:?}", self),
             }
         } else if self.pairs.len() == 2 {
             match num_jokers {
                 2 => HandType::FourOfAKind,
                 1 => HandType::FullHouse,
-                _ => HandType::TwoPair,
+                0 => HandType::TwoPair,
+                _ => panic!("Error for hand {:?}", self),
             }
         } else if self.pairs.len() == 1 {
             match num_jokers {
+                2 => HandType::ThreeOfAKind,
+                1 => HandType::ThreeOfAKind,
                 0 => HandType::OnePair,
-                _ => HandType::ThreeOfAKind,
+                _ => panic!("Error for hand {:?}", self),
+            }
+        } else if self.pairs.len() == 0
+            && self.threes.len() == 0
+            && self.fours.len() == 0
+            && self.fives.len() == 0
+            && self.ones.len() == 5
+        {
+            match num_jokers {
+                1 => HandType::OnePair,
+                0 => HandType::HighCard,
+                _ => panic!("Error for hand {:?}", self),
             }
         } else {
-            match num_jokers {
-                1 => HandType::ThreeOfAKind,
-                _ => HandType::HighCard,
-            }
+            panic!("Unreachable code for {:?}", self);
         }
     }
+
+    fn compare_hands_fallback(
+        self: &Hand,
+        other: &Hand,
+        strength_fn: fn(&char) -> usize,
+    ) -> std::cmp::Ordering {
+        let our_strengths: Vec<usize> = self.hand.iter().map(|&c| strength_fn(&c)).collect();
+        let other_strengths: Vec<usize> = other.hand.iter().map(|&c| strength_fn(&c)).collect();
+        our_strengths.cmp(&other_strengths)
+    }
 }
+
 impl PartialEq for Hand {
     fn eq(&self, other: &Hand) -> bool {
         self.hand == other.hand
@@ -206,16 +245,23 @@ impl Ord for Hand {
             // Are the same type
             // As the spec, iterate through the original string
             if self.jokers {
-                let our_strengths: Vec<usize> = self.hand.iter().map(strength_jokers).collect();
-                let other_strengths: Vec<usize> = other.hand.iter().map(strength_jokers).collect();
-                return our_strengths.cmp(&other_strengths);
+                return self.compare_hands_fallback(other, strength_jokers);
             } else {
-                let our_strengths: Vec<usize> = self.hand.iter().map(strength).collect();
-                let other_strengths: Vec<usize> = other.hand.iter().map(strength).collect();
-                return our_strengths.cmp(&other_strengths);
+                return self.compare_hands_fallback(other, strength);
             }
         }
     }
+}
+
+pub fn get_total_winnings(hands: &mut Vec<Hand>) -> isize {
+    hands.sort();
+
+    let mut sum = 0;
+    for (i, hand) in hands.iter_mut().enumerate() {
+        sum += hand.bid * (i as isize + 1);
+    }
+
+    sum
 }
 
 #[derive(Clone, Debug)]
@@ -238,38 +284,20 @@ impl Solution for Day07 {
     }
 
     fn part_one(hands: &mut Self::ParsedInput) -> String {
+        let mut hands = hands.clone();
         for hand in hands.iter_mut() {
-            // hand.order_by_matches();
-            hand.analyse()
-        }
-        hands.sort();
-        // TODO: implement part one
-
-        let mut sum = 0;
-        for (i, hand) in hands.iter_mut().enumerate() {
-            sum += hand.bid * (i as isize + 1);
+            hand.analyse();
         }
 
-        println!("test");
-        sum.to_string()
+        get_total_winnings(&mut hands).to_string()
     }
 
     fn part_two(hands: &mut Self::ParsedInput) -> String {
+        let mut hands = hands.clone();
         for hand in hands.iter_mut() {
-            // hand.order_by_matches();
-            hand.jokers = true;
-            hand.analyse()
+            hand.analyse_with_jokeers();
         }
-        hands.sort();
-        // TODO: implement part one
-
-        let mut sum = 0;
-        for (i, hand) in hands.iter_mut().enumerate() {
-            sum += hand.bid * (i as isize + 1);
-        }
-
-        println!("test");
-        sum.to_string()
+        get_total_winnings(&mut hands).to_string()
     }
 }
 
@@ -330,10 +358,11 @@ QQQJA 483"
 AAJ32 1
 JJ345 1
 AAAAJ 1
-JJAAA 1
-JJAA2 1
-AAAA2 1
-AAA22 1"
+T9TT9 879
+3JJTT 145
+3T363 524
+6Q6QQ 619
+3JJTT 1"
             ),
             "5".to_string()
         )
