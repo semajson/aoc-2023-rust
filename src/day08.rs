@@ -105,6 +105,8 @@ impl Solution for Day08 {
             all_z_indexes.push(z_indexes[0]);
         }
 
+        // Baked in assumption here that we can use LCM, rather than working out the steps between the Z and the
+        // loop repeating...
         let fewest_steps = all_z_indexes
             .iter()
             .fold(1, |fewest_steps, x| Integer::lcm(&fewest_steps, x));
