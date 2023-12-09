@@ -77,53 +77,29 @@ impl Solution for Day08 {
             .clone()
             .0
             .into_keys()
-            .filter(|x| x.chars().last().unwrap() == 'A')
+            .filter(|x| x.ends_with('A'))
             .collect::<Vec<String>>();
 
-        let step: i32 = 0;
-
-        let mut all_visited = vec![];
-
-        for starting_node in starting_nodes {
-            let mut node = starting_node.clone();
-
-            let mut visited = vec![];
-
-            let mut step = 0;
-            let mut index = step % instructions.len();
-            while !visited.contains(&(node.clone(), index)) {
-                visited.push((node.clone(), index.clone()));
-
-                let instruction = instructions[index];
-                let branch = map.0.get(&node).unwrap();
-                node = branch.get_node(&instruction);
-
-                step += 1;
-                index = step % instructions.len();
-            }
-            visited.push((node.clone(), index.clone()));
-
-            all_visited.push(visited);
-        }
+        let all_visited = starting_nodes
+            .iter()
+            .map(|x| get_all_visited(x, instructions, map))
+            .collect::<Vec<Vec<(String, usize)>>>();
 
         let mut all_z_indexes = vec![];
 
         for visited in all_visited {
             let mut z_indexes = vec![];
             for (index, node) in visited.iter().enumerate() {
-                if (node.0.chars().last().unwrap() == 'Z') {
+                if node.0.ends_with('Z') {
                     z_indexes.push(index);
                 }
             }
-            println!("Found {:?}", z_indexes);
-            all_z_indexes.push(z_indexes);
-        }
 
-        // This is an assumption based on the seen input...
-        let all_z_indexes = all_z_indexes
-            .into_iter()
-            .map(|x| x[0])
-            .collect::<Vec<usize>>();
+            // This assumes there is only 1 Z node visited by each starting node.
+            // This is a big assumption, but was true in the input...
+            assert!(z_indexes.len() == 1);
+            all_z_indexes.push(z_indexes[0]);
+        }
 
         let fewest_steps = all_z_indexes
             .iter()
@@ -133,20 +109,31 @@ impl Solution for Day08 {
     }
 }
 
-// while nodes.iter().any(|x| x.chars().last().unwrap() != 'Z') {
-//     let index = step % instructions.len();
-//     let instruction = instructions[index];
+fn get_all_visited(
+    starting_node: &str,
+    instructions: &Vec<char>,
+    map: &Map,
+) -> Vec<(String, usize)> {
+    let mut node = starting_node.to_owned();
 
-//     let mut next_nodes = vec![];
+    let mut visited = vec![];
 
-//     for node in nodes.iter() {
-//         let branch = map.0.get(node).unwrap();
-//         next_nodes.push(branch.get_node(&instruction));
-//     }
-//     nodes = next_nodes;
+    let mut step = 0;
+    let mut index = step % instructions.len();
 
-//     step += 1;
-// }
+    while !visited.contains(&(node.clone(), index)) {
+        visited.push((node.clone(), index));
+
+        let instruction = instructions[index];
+        let branch = map.0.get(&node).unwrap();
+        node = branch.get_node(&instruction);
+
+        step += 1;
+        index = step % instructions.len();
+    }
+    visited.push((node.clone(), index));
+    visited
+}
 
 #[cfg(test)]
 mod tests {
