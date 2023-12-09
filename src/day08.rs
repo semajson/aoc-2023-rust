@@ -97,6 +97,10 @@ impl Solution for Day08 {
 
             // This assumes there is only 1 Z node visited by each starting node.
             // This is a big assumption, but was true in the input...
+            // Note, if we didn't assume this:
+            // - all_z_indexes would be a Vec<Vec<usize>>.
+            // - then need to find all combinations of the lcm to get the lowest one.
+            // This would add trivial compute time, but not trivial developer time...
             assert!(z_indexes.len() == 1);
             all_z_indexes.push(z_indexes[0]);
         }
