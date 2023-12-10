@@ -99,14 +99,15 @@ impl Solution for Day08 {
             // This is a big assumption, but was true in the input...
             // Note, if we didn't assume this:
             // - all_z_indexes would be a Vec<Vec<usize>>.
-            // - then need to find all combinations of the lcm to get the lowest one.
+            // - then need to find all combinations to get the lowest one.
             // This would add trivial compute time, but not trivial developer time...
             assert!(z_indexes.len() == 1);
             all_z_indexes.push(z_indexes[0]);
         }
 
         // Baked in assumption here that we can use LCM, rather than working out the steps between the Z and the
-        // loop repeating...
+        // loop repeating. There is no good reason for this assumption to hold, and I also don't check it
+        // is true.
         let fewest_steps = all_z_indexes
             .iter()
             .fold(1, |fewest_steps, x| Integer::lcm(&fewest_steps, x));
