@@ -34,7 +34,7 @@ impl Solution for Day10 {
 
         let starting_node = get_starting_node(&map);
 
-        let (visited, _, _) = traverse_loop(starting_node, map);
+        let visited = traverse_loop_both(starting_node, map);
 
         let max = visited.values().max().unwrap();
 
@@ -51,9 +51,9 @@ impl Solution for Day10 {
 
         let starting_node = get_starting_node(&map);
 
-        let (_, perimeter_a, perimeter_b) = traverse_loop(starting_node, map);
+        let path = traverse_loop_one_way(starting_node, map);
 
-        println!("test");
+        let direction = println!("test");
 
         0.to_string()
     }
@@ -105,14 +105,9 @@ fn get_ground_groups(map: &HashMap<Coord, Node>) -> Vec<HashSet<Node>> {
     ground_groups
 }
 
-fn traverse_loop(
-    starting_node: Node,
-    map: HashMap<Coord, Node>,
-) -> (HashMap<Node, i32>, HashSet<Node>, HashSet<Node>) {
+fn traverse_loop_both(starting_node: Node, map: HashMap<Coord, Node>) -> (HashMap<Node, i32>) {
     let mut visited = HashMap::new();
     visited.insert(starting_node.clone(), 0);
-
-    let (mut perimeter_a, mut perimeter_b) = starting_node.get_perimeter_ground_nodes(&map);
 
     let mut current_nodes = vec![starting_node];
 
@@ -139,66 +134,37 @@ fn traverse_loop(
         for node in current_nodes.iter() {
             visited.insert(node.clone(), steps);
 
-            let (new_perimeter_c, new_perimeter_d) = node.get_perimeter_ground_nodes(&map);
-
-            let mut added_c = false;
-            let mut added_d = false;
-            let mut added_to_a = false;
-            let mut added_to_b = false;
-
-            if !new_perimeter_c.is_disjoint(&perimeter_a) && !perimeter_a.is_empty() {
-                assert!(!added_c);
-                perimeter_a.extend(new_perimeter_c.clone());
-                added_c = true;
-                added_to_a = true;
-            }
-            if !new_perimeter_c.is_disjoint(&perimeter_b) && !perimeter_b.is_empty() {
-                assert!(!added_c);
-                perimeter_b.extend(new_perimeter_c.clone());
-                added_c = true;
-                added_to_b = true;
-            }
-            if !new_perimeter_d.is_disjoint(&perimeter_a) && !perimeter_a.is_empty() {
-                assert!(!added_d);
-                perimeter_a.extend(new_perimeter_d.clone());
-                added_d = true;
-                added_to_a = true;
-            }
-            if !new_perimeter_d.is_disjoint(&perimeter_b) && !perimeter_b.is_empty() {
-                if added_d {
-                    println!("test");
-                }
-                assert!(!added_d);
-
-                perimeter_b.extend(new_perimeter_d.clone());
-                added_d = true;
-                added_to_b = true;
-            }
-
-            if !(added_c || added_d) {
-                println!("crap");
-            }
-            assert!(added_c || added_d);
-
-            if !added_c {
-                if !added_to_b {
-                    perimeter_b.extend(new_perimeter_c.clone());
-                } else if !added_to_a {
-                    perimeter_a.extend(new_perimeter_c.clone());
-                }
-            }
-            if !added_d {
-                if !added_to_b {
-                    perimeter_b.extend(new_perimeter_d.clone()); // here
-                } else if !added_to_a {
-                    perimeter_a.extend(new_perimeter_d.clone());
-                }
-            }
-            assert!(perimeter_a.is_disjoint(&perimeter_b));
             println!("tet");
         }
     }
-    (visited, perimeter_a, perimeter_b)
+    (visited)
+}
+
+fn traverse_loop_one_way(starting_node: Node, map: HashMap<Coord, Node>) -> Vec<Node> {
+    let mut path = vec![];
+
+    let mut current_node = starting_node;
+
+    loop {
+        path.push(current_node.clone());
+        let possible_next_nodes = get_possible_next_nodes(&vec![current_node.clone()], &map);
+
+        let next_node = possible_next_nodes
+            .into_iter()
+            .filter(|node| !path.contains(node))
+            .collect::<Vec<Node>>();
+
+        if next_node.is_empty() {
+            break;
+        } else if (next_node.len() == 2) || next_node.len() == 1 {
+            // pick random one
+            current_node = next_node[0].clone();
+        } else {
+            panic!("unreachable branch");
+        }
+    }
+
+    path
 }
 
 fn get_starting_node(map: &HashMap<Coord, Node>) -> Node {
