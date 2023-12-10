@@ -53,9 +53,8 @@ impl Solution for Day10 {
         let tiles_in_loop = map
             .values()
             .clone()
-            .into_iter()
             .filter(|&node| !found_loop.contains(node))
-            .filter(|&node| node_in_loop(&node, &found_loop, &map))
+            .filter(|&node| node_in_loop(node, &found_loop, &map))
             .collect::<Vec<&Node>>();
 
         tiles_in_loop.len().to_string()
@@ -73,14 +72,12 @@ fn traverse_breadth_first(starting_node: Node, map: &HashMap<Coord, Node>) -> Ha
     while !current_nodes.is_empty() {
         steps += 1;
 
-        let possible_next_nodes = get_possible_next_nodes(&current_nodes, &map);
+        let possible_next_nodes = get_possible_next_nodes(&current_nodes, map);
 
         let mut next_nodes = vec![];
         for node in possible_next_nodes {
-            if !visited.contains_key(&node) {
-                // Unseen node, lets visit it:
-                next_nodes.push(node)
-            } else if *visited.get(&node).unwrap() > steps {
+            if !visited.contains_key(&node) || *visited.get(&node).unwrap() > steps {
+                // Unseen node or:
                 // We have found a shorter way to get to this node, so keep exploring
                 next_nodes.push(node)
             }
@@ -104,27 +101,26 @@ fn get_starting_node(map: &HashMap<Coord, Node>) -> Node {
         .collect::<Vec<&Node>>();
 
     assert!(starting_node.len() == 1);
-    let starting_node = starting_node[0].clone();
-    starting_node
+    starting_node[0].clone()
 }
 
-fn get_possible_next_nodes(current_nodes: &Vec<Node>, map: &HashMap<Coord, Node>) -> Vec<Node> {
+fn get_possible_next_nodes(current_nodes: &[Node], map: &HashMap<Coord, Node>) -> Vec<Node> {
     let next_coords = current_nodes
         .iter()
-        .map(|node| node.get_connections(map))
-        .flatten()
+        .flat_map(|node| node.get_connections(map))
+        // .flatten()
         .collect::<Vec<Coord>>();
 
     let possible_next_nodes = next_coords
         .iter()
-        .map(|coord| map.get(&coord).unwrap().clone())
+        .map(|coord| map.get(coord).unwrap().clone())
         .collect::<Vec<Node>>();
     possible_next_nodes
 }
 
 fn node_in_loop(node: &Node, found_loop: &HashSet<Node>, map: &HashMap<Coord, Node>) -> bool {
     // Cheated and looked this up
-    assert!(!found_loop.contains(&node));
+    assert!(!found_loop.contains(node));
 
     let mut current_coord = node.coord.clone();
     let mut crosses = 0;
@@ -132,13 +128,12 @@ fn node_in_loop(node: &Node, found_loop: &HashSet<Node>, map: &HashMap<Coord, No
     while map.contains_key(&current_coord) {
         let current_node = map.get(&current_coord).unwrap();
 
-        if found_loop.contains(current_node) {
-            if (current_node.get_effective_shape(map) == '|')
+        if found_loop.contains(current_node)
+            && ((current_node.get_effective_shape(map) == '|')
                 || current_node.get_effective_shape(map) == 'J'
-                || current_node.get_effective_shape(map) == 'L'
-            {
-                crosses += 1;
-            }
+                || current_node.get_effective_shape(map) == 'L')
+        {
+            crosses += 1;
         }
 
         current_coord.x += 1;
@@ -159,7 +154,7 @@ impl Coord {
         }
     }
     pub fn from(x: isize, y: isize) -> Coord {
-        Coord { x: x, y: y }
+        Coord { x, y }
     }
 
     pub fn get_neighbors(&self) -> Vec<Coord> {
