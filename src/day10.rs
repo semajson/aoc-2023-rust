@@ -29,83 +29,40 @@ impl Solution for Day10 {
         map
     }
 
-    fn part_one(map: &mut Self::ParsedInput) -> String {
-        let map = map.clone(); //defensive, might not need
+    fn part_one(input_map: &mut Self::ParsedInput) -> String {
+        let map = input_map.clone(); //defensive, might not need
 
         let starting_node = get_starting_node(&map);
 
-        let visited = traverse_loop_both(starting_node, map);
+        let visited = traverse_breadth_first(starting_node, &map);
 
         let max = visited.values().max().unwrap();
 
         max.to_string()
     }
 
-    fn part_two(map: &mut Self::ParsedInput) -> String {
-        let map = map.clone(); //defensive, might not need
-
-        // Find all the ground groups
-        let ground_groups = get_ground_groups(&map);
-
-        // println!("{:?}", ground_groups);
+    fn part_two(input_map: &mut Self::ParsedInput) -> String {
+        let map = input_map.clone(); //defensive, might not need
 
         let starting_node = get_starting_node(&map);
 
-        let path = traverse_loop_one_way(starting_node, map);
-
-        let direction = println!("test");
-
-        0.to_string()
-    }
-}
-
-fn get_ground_groups(map: &HashMap<Coord, Node>) -> Vec<HashSet<Node>> {
-    // This is a bit messy, could be improved
-    let ground_nodes = map
-        .values()
-        .filter(|node| node.is_ground())
-        .map(|node| node.clone())
-        .collect::<Vec<Node>>();
-
-    let mut ground_groups: Vec<HashSet<Node>> = vec![];
-    for node in ground_nodes {
-        let adjacent_coords = node.coord.get_adjacent_neighbors();
-        let ground_neighbors = adjacent_coords
-            .iter()
-            .filter(|coord| map.contains_key(&coord) && map.get(&coord).unwrap().is_ground())
-            .map(|coord| map.get(&coord).unwrap().clone())
+        let found_loop = traverse_breadth_first(starting_node, &map)
+            .into_keys()
             .collect::<HashSet<Node>>();
 
-        let mut found_group = ground_neighbors;
-        found_group.insert(node.clone());
-
-        // Now, add the newly found group to ground_groups.
-        // Note, this might involve combining 2 existing groups.
-        let mut matches = vec![found_group.clone()];
-
-        for group in ground_groups.iter() {
-            if !group.is_disjoint(&found_group) {
-                matches.push(group.clone());
-            }
-        }
-        ground_groups = ground_groups
+        let tiles_in_loop = map
+            .values()
+            .clone()
             .into_iter()
-            .filter(|group| !matches.contains(group))
-            .collect();
+            .filter(|&node| !found_loop.contains(node))
+            .filter(|&node| node_in_loop(&node, &found_loop, &map))
+            .collect::<Vec<&Node>>();
 
-        // Collapse into one hashset then re-add
-        let new_group = matches
-            .into_iter()
-            .fold(HashSet::new(), |mut new_group, x| {
-                new_group.extend(x);
-                new_group
-            });
-        ground_groups.push(new_group);
+        tiles_in_loop.len().to_string()
     }
-    ground_groups
 }
 
-fn traverse_loop_both(starting_node: Node, map: HashMap<Coord, Node>) -> (HashMap<Node, i32>) {
+fn traverse_breadth_first(starting_node: Node, map: &HashMap<Coord, Node>) -> HashMap<Node, i32> {
     let mut visited = HashMap::new();
     visited.insert(starting_node.clone(), 0);
 
@@ -134,37 +91,10 @@ fn traverse_loop_both(starting_node: Node, map: HashMap<Coord, Node>) -> (HashMa
         for node in current_nodes.iter() {
             visited.insert(node.clone(), steps);
 
-            println!("tet");
+            // println!("tet");
         }
     }
-    (visited)
-}
-
-fn traverse_loop_one_way(starting_node: Node, map: HashMap<Coord, Node>) -> Vec<Node> {
-    let mut path = vec![];
-
-    let mut current_node = starting_node;
-
-    loop {
-        path.push(current_node.clone());
-        let possible_next_nodes = get_possible_next_nodes(&vec![current_node.clone()], &map);
-
-        let next_node = possible_next_nodes
-            .into_iter()
-            .filter(|node| !path.contains(node))
-            .collect::<Vec<Node>>();
-
-        if next_node.is_empty() {
-            break;
-        } else if (next_node.len() == 2) || next_node.len() == 1 {
-            // pick random one
-            current_node = next_node[0].clone();
-        } else {
-            panic!("unreachable branch");
-        }
-    }
-
-    path
+    visited
 }
 
 fn get_starting_node(map: &HashMap<Coord, Node>) -> Node {
@@ -190,6 +120,30 @@ fn get_possible_next_nodes(current_nodes: &Vec<Node>, map: &HashMap<Coord, Node>
         .map(|coord| map.get(&coord).unwrap().clone())
         .collect::<Vec<Node>>();
     possible_next_nodes
+}
+
+fn node_in_loop(node: &Node, found_loop: &HashSet<Node>, map: &HashMap<Coord, Node>) -> bool {
+    // Cheated and looked this up
+    assert!(!found_loop.contains(&node));
+
+    let mut current_coord = node.coord.clone();
+    let mut crosses = 0;
+
+    while map.contains_key(&current_coord) {
+        let current_node = map.get(&current_coord).unwrap();
+
+        if found_loop.contains(current_node) {
+            if (current_node.get_effective_shape(map) == '|')
+                || current_node.get_effective_shape(map) == 'J'
+                || current_node.get_effective_shape(map) == 'L'
+            {
+                crosses += 1;
+            }
+        }
+
+        current_coord.x += 1;
+    }
+    (crosses % 2) == 1
 }
 
 #[derive(Clone, Debug, PartialEq, Hash, Eq, PartialOrd, Ord)]
@@ -305,16 +259,18 @@ impl Node {
         let mut connected_coords = vec![];
 
         for neighbor in neighbors {
-            let neighbor_connections = map.get(&neighbor).unwrap().get_connections(map);
+            if map.contains_key(&neighbor) {
+                let neighbor_connections = map.get(&neighbor).unwrap().get_connections(map);
 
-            if neighbor_connections.contains(&self.coord) {
-                connected_coords.push(neighbor);
+                if neighbor_connections.contains(&self.coord) {
+                    connected_coords.push(neighbor);
+                }
             }
         }
         connected_coords.sort();
 
-        let valid_shapes = vec!['|', '-', 'L', 'J', '7', 'F'];
-        let matching_shapes = valid_shapes
+        let all_shapes = vec!['|', '-', 'L', 'J', '7', 'F'];
+        let possible_node = all_shapes
             .into_iter()
             .map(|shape| Node {
                 coord: self.coord.clone(),
@@ -322,7 +278,7 @@ impl Node {
             })
             .collect::<Vec<Node>>();
 
-        let matching_shapes = matching_shapes
+        let node = possible_node
             .clone()
             .into_iter()
             .filter(|node| {
@@ -332,102 +288,8 @@ impl Node {
             })
             .collect::<Vec<Node>>();
 
-        assert!(matching_shapes.len() == 1);
-        matching_shapes[0].shape
-    }
-
-    fn is_ground(&self) -> bool {
-        self.shape == '.'
-    }
-
-    pub fn get_perimeter_ground_nodes(
-        &self,
-        map: &HashMap<Coord, Node>,
-    ) -> (HashSet<Node>, HashSet<Node>) {
-        let (perimeter_a_coord, perimeter_b_coord) = self.get_perimeter_coords(map);
-
-        let perimeter_a_nodes = perimeter_a_coord
-            .iter()
-            .map(|coord| map.get(coord).unwrap().clone())
-            // .filter(|x| x.is_ground())
-            .collect::<HashSet<Node>>();
-        let perimeter_b_nodes = perimeter_b_coord
-            .iter()
-            .map(|coord| map.get(coord).unwrap().clone())
-            // .filter(|x| x.is_ground())
-            .collect::<HashSet<Node>>();
-        (perimeter_a_nodes, perimeter_b_nodes)
-    }
-    pub fn get_perimeter_coords(&self, map: &HashMap<Coord, Node>) -> (Vec<Coord>, Vec<Coord>) {
-        match self.get_effective_shape(map) {
-            '|' => (
-                vec![
-                    Coord::from(self.coord.x + 1, self.coord.y + 1),
-                    Coord::from(self.coord.x + 1, self.coord.y),
-                    Coord::from(self.coord.x + 1, self.coord.y - 1),
-                ],
-                vec![
-                    Coord::from(self.coord.x - 1, self.coord.y + 1),
-                    Coord::from(self.coord.x - 1, self.coord.y),
-                    Coord::from(self.coord.x - 1, self.coord.y - 1),
-                ],
-            ),
-            '-' => (
-                vec![
-                    Coord::from(self.coord.x - 1, self.coord.y + 1),
-                    Coord::from(self.coord.x, self.coord.y + 1),
-                    Coord::from(self.coord.x + 1, self.coord.y + 1),
-                ],
-                vec![
-                    Coord::from(self.coord.x - 1, self.coord.y - 1),
-                    Coord::from(self.coord.x, self.coord.y - 1),
-                    Coord::from(self.coord.x + 1, self.coord.y - 1),
-                ],
-            ),
-            'L' => (
-                vec![
-                    Coord::from(self.coord.x - 1, self.coord.y - 1),
-                    Coord::from(self.coord.x - 1, self.coord.y),
-                    Coord::from(self.coord.x - 1, self.coord.y + 1),
-                    Coord::from(self.coord.x, self.coord.y + 1),
-                    Coord::from(self.coord.x + 1, self.coord.y + 1),
-                ],
-                vec![],
-            ),
-            'J' => (
-                vec![
-                    Coord::from(self.coord.x + 1, self.coord.y - 1),
-                    Coord::from(self.coord.x + 1, self.coord.y),
-                    Coord::from(self.coord.x + 1, self.coord.y + 1),
-                    Coord::from(self.coord.x, self.coord.y + 1),
-                    Coord::from(self.coord.x - 1, self.coord.y + 1),
-                ],
-                vec![],
-            ),
-
-            '7' => (
-                vec![
-                    Coord::from(self.coord.x - 1, self.coord.y - 1),
-                    Coord::from(self.coord.x, self.coord.y - 1),
-                    Coord::from(self.coord.x + 1, self.coord.y - 1),
-                    Coord::from(self.coord.x + 1, self.coord.y),
-                    Coord::from(self.coord.x + 1, self.coord.y + 1),
-                ],
-                vec![],
-            ),
-            'F' => (
-                vec![
-                    Coord::from(self.coord.x - 1, self.coord.y - 1),
-                    Coord::from(self.coord.x, self.coord.y - 1),
-                    Coord::from(self.coord.x + 1, self.coord.y - 1),
-                    Coord::from(self.coord.x - 1, self.coord.y),
-                    Coord::from(self.coord.x - 1, self.coord.y + 1),
-                ],
-                vec![],
-            ),
-            '.' => panic!("Error, trying to find perimeter of ground {:?}", self),
-            _ => panic!("Error, didn't get connected coords for {:?}", self),
-        }
+        assert!(node.len() == 1);
+        node[0].shape
     }
 }
 
@@ -463,7 +325,7 @@ L|-JF"
 .L--J.L--J.
 ..........."
             ),
-            "0".to_string()
+            "4".to_string()
         )
     }
 
@@ -481,7 +343,45 @@ L|-JF"
 .L--JL--J.
 .........."
             ),
-            "0".to_string()
+            "4".to_string()
+        )
+    }
+
+    #[test]
+    fn check_day10_part2_case3() {
+        assert_eq!(
+            Day10::solve_part_two(
+                ".F----7F7F7F7F-7....
+.|F--7||||||||FJ....
+.||.FJ||||||||L7....
+FJL7L7LJLJ||LJ.L-7..
+L--J.L7...LJS7F-7L7.
+....F-J..F7FJ|L7L7L7
+....L7.F7||L7|.L7L7|
+.....|FJLJ|FJ|F7|.LJ
+....FJL-7.||.||||...
+....L---J.LJ.LJLJ..."
+            ),
+            "8".to_string()
+        )
+    }
+
+    #[test]
+    fn check_day10_part2_case4() {
+        assert_eq!(
+            Day10::solve_part_two(
+                "FF7FSF7F7F7F7F7F---7
+L|LJ||||||||||||F--J
+FL-7LJLJ||||||LJL-77
+F--JF--7||LJLJ7F7FJ-
+L---JF-JLJ.||-FJLJJ7
+|F|F-JF---7F7-L7L|7|
+|FFJF7L7F-JF7|JL---7
+7-L-JL7||F7|L7F-7F7|
+L.L7LFJ|||||FJL7||LJ
+L7JLJL-JLJLJL--JLJ.L"
+            ),
+            "10".to_string()
         )
     }
 
