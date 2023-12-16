@@ -4,14 +4,20 @@ use crate::Solution;
 pub struct Day12;
 
 impl Solution for Day12 {
-    type ParsedInput = String;
+    type ParsedInput = Vec<Vec<char>>;
 
-    fn parse_input(input_lines: &str) -> Self::ParsedInput {
-        // Change the return type of this function by editing the ParsedInput type above.
-        // You can skip this and pass the raw string to each part.
-        // Alternatively, you can parse the input here, either working on the same mutable struct
-        // in parts one and two or passing a tuple with the data required for each part.
-        input_lines.to_string()
+    // Todo - this is wrong.
+    // Use regex
+    fn parse_input(input: &str) -> Self::ParsedInput {
+        let input_lines = input
+            .lines()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>();
+
+        input_lines
+            .iter()
+            .map(|x| parse_input_line(x))
+            .collect::<Vec<Vec<char>>>()
     }
 
     fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
@@ -25,13 +31,58 @@ impl Solution for Day12 {
     }
 }
 
+pub fn parse_input_line(input_line: &str) -> Vec<char> {
+    input_line.chars().collect()
+}
+
+pub fn get_contiguous_damaged_groups(input: &Vec<char>) -> Vec<usize> {
+    let mut groups: Vec<usize> = vec![];
+
+    let mut current_group_let = 0;
+    for spring in input {
+        match spring {
+            '#' => {
+                current_group_let = current_group_let + 1;
+            }
+            '.' => {
+                groups.push(current_group_let);
+                current_group_let = 0;
+            }
+            _ => panic!("Unexpected input {:?}", spring),
+        };
+    }
+    if current_group_let != 0 {
+        groups.push(current_group_let);
+    }
+
+    groups
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
+    fn test_get_contiguous_damaged_groups_cas1() {
+        assert_eq!(
+            get_contiguous_damaged_groups(&parse_input_line("#.#.###")),
+            vec![1, 1, 3]
+        )
+    }
+
+    #[test]
     fn check_day12_part1_case1() {
-        assert_eq!(Day12::solve_part_one(""), "0".to_string())
+        assert_eq!(
+            Day12::solve_part_one(
+                "???.### 1,1,3
+.??..??...?##. 1,1,3
+?#?#?#?#?#?#?#? 1,3,1,6
+????.#...#... 4,1,1
+????.######..#####. 1,6,5
+?###???????? 3,2,1"
+            ),
+            "21".to_string()
+        )
     }
 
     #[test]
