@@ -1,5 +1,6 @@
 use crate::Solution;
 use regex::Regex;
+use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
 pub struct Day12;
@@ -7,30 +8,17 @@ pub struct Day12;
 impl Solution for Day12 {
     type ParsedInput = Vec<(Vec<char>, Vec<usize>)>;
 
-    // Todo - this is wrong.
-    // Use regex
-
     fn parse_input(input: &str) -> Self::ParsedInput {
-        // let input_lines = input
-        //     .lines()
-        //     .map(|x| x.to_string())
-        //     .collect::<Vec<String>>();
-
-        // input_lines
-        //     .iter()
-        //     .map(|x| parse_row(x))
-        //     .collect::<Vec<Vec<char>>>()
-
         let mut parsed_input = vec![];
 
         let re = Regex::new(r"(?<row>[?#.]+) (?<groups>[0-9,]+)").unwrap();
 
         for cap in re.captures_iter(input) {
             let row = cap.name("row").unwrap().as_str();
-            let row = parse_row(&row);
+            let row = parse_row(row);
 
             let groups = cap.name("groups").unwrap().as_str();
-            let groups = parse_groups(&groups);
+            let groups = parse_groups(groups);
 
             parsed_input.push((row, groups));
         }
@@ -48,18 +36,13 @@ impl Solution for Day12 {
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        // TODO: implement part two
         let day_2_input = _parsed_input
             .into_iter()
             .map(|(row, groups)| convert_to_day_2_input(row, groups))
             .collect::<Vec<(Vec<char>, Vec<usize>)>>();
         let sum: usize = day_2_input
             .iter()
-            .map(|(row, groups)| {
-                println!("Done row: {:?}", row);
-                println!("");
-                get_arrangements(row, groups)
-            })
+            .map(|(row, groups)| get_arrangements(row, groups))
             .sum();
 
         sum.to_string()
@@ -93,41 +76,31 @@ pub fn convert_to_day_2_input(row: &Vec<char>, groups: &Vec<usize>) -> (Vec<char
     (new_rows, new_groups)
 }
 
-pub fn get_contiguous_damaged_groups(input: &Vec<char>) -> Vec<usize> {
-    let mut groups: Vec<usize> = vec![];
-
-    let mut current_group_let = 0;
-    for spring in input {
-        match spring {
-            '#' => {
-                current_group_let = current_group_let + 1;
-            }
-            '.' => {
-                groups.push(current_group_let);
-                current_group_let = 0;
-            }
-            _ => panic!("Unexpected input {:?}", spring),
-        };
-    }
-    if current_group_let != 0 {
-        groups.push(current_group_let);
-    }
-
-    groups
-}
-
 pub fn get_arrangements(row: &Vec<char>, groups: &Vec<usize>) -> usize {
-    get_arrangements_recursive(groups, row, &vec![], 0)
+    get_arrangements_recursive(groups, row, &vec![], 0, &mut HashMap::new())
 }
 
-fn get_arrangements_recursive(
+fn get_arrangements_recursive<'a>(
     expected_groups: &Vec<usize>,
-    remaining_row: &[char],
+    remaining_row: &'a [char],
     found_groups: &Vec<usize>,
     current_group: usize,
+    cache: &mut HashMap<(Vec<usize>, &'a [char], Vec<usize>, usize), usize>,
 ) -> usize {
+    let cache_key = (
+        expected_groups.clone(),
+        remaining_row,
+        found_groups.clone(),
+        current_group,
+    );
+    if cache.contains_key(&cache_key) {
+        return cache.get(&cache_key).unwrap().clone();
+    }
+
+    let result: usize;
+
     if !expected_groups.starts_with(&found_groups) {
-        0
+        result = 0;
     } else if remaining_row.is_empty() {
         let mut all_found_groups = found_groups.clone();
         if current_group != 0 {
@@ -135,25 +108,32 @@ fn get_arrangements_recursive(
         }
 
         if expected_groups == &all_found_groups {
-            1
+            result = 1;
         } else {
-            0
+            result = 0;
         }
     } else {
         let (current_spring, remaining_row) = remaining_row.split_first().unwrap();
-        match current_spring {
+        result = match current_spring {
             '#' => get_arrangements_recursive(
                 expected_groups,
                 remaining_row,
                 found_groups,
                 current_group + 1,
+                cache,
             ),
             '.' => {
                 let mut new_found_group = found_groups.clone();
                 if current_group != 0 {
                     new_found_group.push(current_group);
                 }
-                get_arrangements_recursive(expected_groups, remaining_row, &new_found_group, 0)
+                get_arrangements_recursive(
+                    expected_groups,
+                    remaining_row,
+                    &new_found_group,
+                    0,
+                    cache,
+                )
             }
             '?' => {
                 let branch_1 = get_arrangements_recursive(
@@ -161,33 +141,34 @@ fn get_arrangements_recursive(
                     remaining_row,
                     found_groups,
                     current_group + 1,
+                    cache,
                 );
 
                 let mut new_found_group = found_groups.clone();
                 if current_group != 0 {
                     new_found_group.push(current_group);
                 }
-                let branch_2 =
-                    get_arrangements_recursive(expected_groups, remaining_row, &new_found_group, 0);
+                let branch_2 = get_arrangements_recursive(
+                    expected_groups,
+                    remaining_row,
+                    &new_found_group,
+                    0,
+                    cache,
+                );
 
                 branch_1 + branch_2
             }
             _ => panic!("Error unexpected spring {:?}", current_spring),
-        }
+        };
     }
+    cache.insert(cache_key, result);
+
+    result
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_get_contiguous_damaged_groups_cas1() {
-        assert_eq!(
-            get_contiguous_damaged_groups(&parse_row("#.#.###")),
-            vec![1, 1, 3]
-        )
-    }
 
     #[test]
     fn test_get_arrangements_cases_1() {
