@@ -37,7 +37,7 @@ impl Solution for Day12 {
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
         let day_2_input = _parsed_input
-            .into_iter()
+            .iter_mut()
             .map(|(row, groups)| convert_to_day_2_input(row, groups))
             .collect::<Vec<(Vec<char>, Vec<usize>)>>();
         let sum: usize = day_2_input
@@ -54,12 +54,12 @@ pub fn parse_row(input_line: &str) -> Vec<char> {
 }
 pub fn parse_groups(input_group: &str) -> Vec<usize> {
     input_group
-        .split(",")
+        .split(',')
         .map(|x| x.to_string().parse::<usize>().unwrap())
         .collect()
 }
 
-pub fn convert_to_day_2_input(row: &Vec<char>, groups: &Vec<usize>) -> (Vec<char>, Vec<usize>) {
+pub fn convert_to_day_2_input(row: &[char], groups: &[usize]) -> (Vec<char>, Vec<usize>) {
     let repetitions = 5;
     let mut new_rows = vec![];
     let mut new_groups = vec![];
@@ -68,15 +68,15 @@ pub fn convert_to_day_2_input(row: &Vec<char>, groups: &Vec<usize>) -> (Vec<char
         if !new_rows.is_empty() {
             new_rows.push('?');
         }
-        new_groups.extend(groups.clone());
+        new_groups.extend(groups);
 
-        new_rows.extend(row.clone());
+        new_rows.extend(row);
     }
 
     (new_rows, new_groups)
 }
 
-pub fn get_arrangements(row: &Vec<char>, groups: &Vec<usize>) -> usize {
+pub fn get_arrangements(row: &[char], groups: &Vec<usize>) -> usize {
     get_arrangements_recursive(groups, row, &vec![], 0, &mut HashMap::new())
 }
 
@@ -94,12 +94,12 @@ fn get_arrangements_recursive<'a>(
         current_group,
     );
     if cache.contains_key(&cache_key) {
-        return cache.get(&cache_key).unwrap().clone();
+        return *cache.get(&cache_key).unwrap();
     }
 
     let result: usize;
 
-    if !expected_groups.starts_with(&found_groups) {
+    if !expected_groups.starts_with(found_groups) {
         result = 0;
     } else if remaining_row.is_empty() {
         let mut all_found_groups = found_groups.clone();
