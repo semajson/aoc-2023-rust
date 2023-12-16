@@ -49,7 +49,20 @@ impl Solution for Day12 {
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
         // TODO: implement part two
-        0.to_string()
+        let day_2_input = _parsed_input
+            .into_iter()
+            .map(|(row, groups)| convert_to_day_2_input(row, groups))
+            .collect::<Vec<(Vec<char>, Vec<usize>)>>();
+        let sum: usize = day_2_input
+            .iter()
+            .map(|(row, groups)| {
+                println!("Done row: {:?}", row);
+                println!("");
+                get_arrangements(row, groups)
+            })
+            .sum();
+
+        sum.to_string()
     }
 }
 
@@ -61,6 +74,23 @@ pub fn parse_groups(input_group: &str) -> Vec<usize> {
         .split(",")
         .map(|x| x.to_string().parse::<usize>().unwrap())
         .collect()
+}
+
+pub fn convert_to_day_2_input(row: &Vec<char>, groups: &Vec<usize>) -> (Vec<char>, Vec<usize>) {
+    let repetitions = 5;
+    let mut new_rows = vec![];
+    let mut new_groups = vec![];
+    // Must be a better way to do this
+    for _ in 0..repetitions {
+        if !new_rows.is_empty() {
+            new_rows.push('?');
+        }
+        new_groups.extend(groups.clone());
+
+        new_rows.extend(row.clone());
+    }
+
+    (new_rows, new_groups)
 }
 
 pub fn get_contiguous_damaged_groups(input: &Vec<char>) -> Vec<usize> {
@@ -184,7 +214,17 @@ mod tests {
 
     #[test]
     fn check_day12_part2_case1() {
-        assert_eq!(Day12::solve_part_two(""), "0".to_string())
+        assert_eq!(
+            Day12::solve_part_two(
+                "???.### 1,1,3
+.??..??...?##. 1,1,3
+?#?#?#?#?#?#?#? 1,3,1,6
+????.#...#... 4,1,1
+????.######..#####. 1,6,5
+?###???????? 3,2,1"
+            ),
+            "525152".to_string()
+        )
     }
 
     #[test]
