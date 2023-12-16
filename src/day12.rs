@@ -80,6 +80,7 @@ pub fn get_arrangements(row: &[char], groups: &Vec<usize>) -> usize {
     get_arrangements_recursive(groups, row, &vec![], 0, &mut HashMap::new())
 }
 
+#[allow(clippy::type_complexity)] // Allow this as trying to fix it was a lifetime nightmare. todo - understand lifetimes
 fn get_arrangements_recursive<'a>(
     expected_groups: &Vec<usize>,
     remaining_row: &'a [char],
