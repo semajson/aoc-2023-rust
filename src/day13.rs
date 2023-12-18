@@ -1,6 +1,5 @@
 use crate::Solution;
 use regex::Regex;
-use std::collections::{btree_set::Intersection, HashSet};
 
 #[derive(Clone, Debug)]
 pub struct Day13;
@@ -26,17 +25,17 @@ impl Solution for Day13 {
     }
 
     fn part_one(patterns: &mut Self::ParsedInput) -> String {
-        let sum: usize = patterns.iter().cloned().map(|x| get_summary(x)).sum();
+        let sum: usize = patterns
+            .iter()
+            .cloned()
+            .map(|x| get_summary(x, false))
+            .sum();
 
         sum.to_string()
     }
 
     fn part_two(patterns: &mut Self::ParsedInput) -> String {
-        let sum: usize = patterns
-            .iter()
-            .cloned()
-            .map(|x| get_summary_smudged(x))
-            .sum();
+        let sum: usize = patterns.iter().cloned().map(|x| get_summary(x, true)).sum();
         sum.to_string()
     }
 }
@@ -92,30 +91,21 @@ fn opposite_value(value: char) -> char {
     }
 }
 
-fn get_summary_smudged(pattern: Vec<Vec<char>>) -> usize {
-    let (vertical_mirror_right_index, horizontal_mirror_right_index) = new_unsmudged_index(pattern);
-    assert!(
-        (vertical_mirror_right_index.len() == 1 && horizontal_mirror_right_index.len() == 0)
-            || (vertical_mirror_right_index.len() == 0 && horizontal_mirror_right_index.len() == 1)
-    );
+fn get_summary(pattern: Vec<Vec<char>>, smudged: bool) -> usize {
+    let vertical_mirror_right_index: Vec<usize>;
+    let horizontal_mirror_right_index: Vec<usize>;
 
-    // Note, mirror_right_index goes from 0 - len() -1, but in the question it goes from 1 to len()
-    // So, the question is asking for stuff to the left of the mirror, but for my implementation.
-    // this is to the right.
-    let output = vertical_mirror_right_index.iter().sum::<usize>()
-        + horizontal_mirror_right_index.iter().sum::<usize>() * 100;
-
-    output
-}
-
-fn get_summary(pattern: Vec<Vec<char>>) -> usize {
-    let vertical_mirror_right_index = get_vertical_mirror_index(&pattern);
-    let pattern_transpose = transpose(&pattern);
-    let horizontal_mirror_right_index = get_vertical_mirror_index(&pattern_transpose);
+    if smudged {
+        (vertical_mirror_right_index, horizontal_mirror_right_index) = new_unsmudged_index(pattern);
+    } else {
+        vertical_mirror_right_index = get_vertical_mirror_index(&pattern);
+        let pattern_transpose = transpose(&pattern);
+        horizontal_mirror_right_index = get_vertical_mirror_index(&pattern_transpose);
+    }
 
     assert!(
-        (vertical_mirror_right_index.len() == 1 && horizontal_mirror_right_index.len() == 0)
-            || (vertical_mirror_right_index.len() == 0 && horizontal_mirror_right_index.len() == 1)
+        (vertical_mirror_right_index.len() == 1 && horizontal_mirror_right_index.is_empty())
+            || (vertical_mirror_right_index.is_empty() && horizontal_mirror_right_index.len() == 1)
     );
 
     // Note, mirror_right_index goes from 0 - len() -1, but in the question it goes from 1 to len()
@@ -130,15 +120,12 @@ fn get_summary(pattern: Vec<Vec<char>>) -> usize {
 fn get_vertical_mirror_index(pattern: &Vec<Vec<char>>) -> Vec<usize> {
     let mut mirror_indexes_right = (1..pattern[0].len()).collect::<Vec<usize>>();
     for row in pattern {
-        mirror_indexes_right = mirror_indexes_right
-            .into_iter()
-            .filter(|index| is_line_symmetry(&row, *index))
-            .collect();
+        mirror_indexes_right.retain(|index| is_line_symmetry(row, *index));
     }
     mirror_indexes_right
 }
 
-fn is_line_symmetry(row: &Vec<char>, right_index: usize) -> bool {
+fn is_line_symmetry(row: &[char], right_index: usize) -> bool {
     let left = row[..right_index].iter().collect::<Vec<&char>>();
     let right = row[right_index..].iter().collect::<Vec<&char>>();
     let right_rev = right.iter().cloned().rev().collect::<Vec<&char>>();
