@@ -44,6 +44,14 @@ fn get_summary(pattern: Vec<Vec<char>>) -> usize {
     let pattern_transpose = transpose(&pattern);
     let horizontal_mirror_right_index = get_vertical_mirror_index(&pattern_transpose);
 
+    assert!(
+        (vertical_mirror_right_index.len() == 1 && horizontal_mirror_right_index.len() == 0)
+            || (vertical_mirror_right_index.len() == 0 && horizontal_mirror_right_index.len() == 1)
+    );
+
+    // Note, mirror_right_index goes from 0 - len() -1, but in the question it goes from 1 to len()
+    // So, the question is asking for stuff to the left of the mirror, but for my implementation.
+    // this is to the right.
     let output = vertical_mirror_right_index.iter().sum::<usize>()
         + horizontal_mirror_right_index.iter().sum::<usize>() * 100;
 
