@@ -68,6 +68,13 @@ mod tests {
     use super::*;
 
     #[test]
+    fn check_tilt_north() {
+        let mut grid = vec![vec!['.', '.'], vec!['O', '.']];
+        tilt_north(&mut grid);
+        assert_eq!(grid, vec![vec!['O', '.'], vec!['.', '.']]);
+    }
+
+    #[test]
     fn check_day14_part1_case1() {
         assert_eq!(
             Day14::solve_part_one(
@@ -101,7 +108,7 @@ O.#..O.#.#
 #....###..
 #OO..#...."
             ),
-            "0".to_string()
+            "64".to_string()
         )
     }
 
