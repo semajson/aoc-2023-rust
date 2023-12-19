@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::os::unix::fs::MetadataExt;
 
 use crate::Solution;
 
@@ -48,7 +47,7 @@ impl Solution for Day14 {
 
             if grid_to_index.contains_key(&grid) {
                 println!("Hit repeat after {:?}", x);
-                start_repeat = grid_to_index.get(&grid).unwrap().clone();
+                start_repeat = *grid_to_index.get(&grid).unwrap();
                 repeat_len = x - start_repeat;
                 break;
             } else {
@@ -83,6 +82,7 @@ fn tilt_north(grid: &mut Vec<Vec<char>>) {
     }
 }
 
+#[allow(clippy::needless_range_loop)]
 fn tilt_south(grid: &mut Vec<Vec<char>>) {
     for y in (0..grid.len()).rev() {
         for x in 0..grid[0].len() {
@@ -123,6 +123,7 @@ fn tilt_east(grid: &mut Vec<Vec<char>>) {
     }
 }
 
+#[allow(clippy::needless_range_loop)]
 fn tilt_west(grid: &mut Vec<Vec<char>>) {
     for x in 0..grid[0].len() {
         for y in 0..grid.len() {
