@@ -8,7 +8,7 @@ impl Solution for Day15 {
     type ParsedInput = Vec<Step>;
 
     fn parse_input(input: &str) -> Self::ParsedInput {
-        let re = Regex::new(r"(?<instruction>[a-zA-Z]+)(?<operator>[-=])(?<operator_value>[0-9]*)")
+        let re = Regex::new(r"(?<instruction>[a-zA-Z]+)(?<operator>[-=])(?<focal_length>[0-9]*)")
             .unwrap();
 
         let mut steps = vec![];
@@ -18,18 +18,18 @@ impl Solution for Day15 {
             let operator = cap.name("operator").unwrap().as_str();
             let operator = operator.chars().collect::<Vec<char>>()[0];
 
-            let raw_operator_value = cap.name("operator_value").unwrap().as_str();
+            let raw_focal_length = cap.name("focal_length").unwrap().as_str();
 
-            let operator_value: Option<usize> = if raw_operator_value.is_empty() {
+            let focal_length: Option<usize> = if raw_focal_length.is_empty() {
                 None
             } else {
-                Some(raw_operator_value.parse::<usize>().unwrap())
+                Some(raw_focal_length.parse::<usize>().unwrap())
             };
 
             let step = Step {
                 label: instruction,
                 operator,
-                focal_length: operator_value,
+                focal_length,
             };
 
             steps.push(step);
@@ -60,7 +60,6 @@ impl Solution for Day15 {
             }
         }
 
-        println!("test");
         power.to_string()
     }
 }
