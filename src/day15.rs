@@ -19,17 +19,17 @@ impl Solution for Day15 {
             let operator = operator.chars().collect::<Vec<char>>()[0];
 
             let raw_operator_value = cap.name("operator_value").unwrap().as_str();
-            let operator_value: Option<usize>;
-            if raw_operator_value.len() > 0 {
-                operator_value = Some(raw_operator_value.parse::<usize>().unwrap());
+
+            let operator_value: Option<usize> = if raw_operator_value.is_empty() {
+                None
             } else {
-                operator_value = None;
-            }
+                Some(raw_operator_value.parse::<usize>().unwrap())
+            };
 
             let step = Step {
-                instruction,
+                label: instruction,
                 operator,
-                operator_value,
+                focal_length: operator_value,
             };
 
             steps.push(step);
@@ -48,31 +48,87 @@ impl Solution for Day15 {
     }
 
     fn part_two(steps: &mut Self::ParsedInput) -> String {
-        // TODO: implement part two
-        0.to_string()
+        let mut boxes: Vec<Vec<Lense>> = vec![vec![]; 256];
+        for step in steps {
+            boxes = step.do_operation(boxes);
+        }
+        let mut power = 0;
+
+        for (box_num, my_box) in boxes.iter().enumerate() {
+            for (lense_index, lense) in my_box.iter().enumerate() {
+                power += (1 + box_num) * (1 + lense_index) * lense.focal_length;
+            }
+        }
+
+        println!("test");
+        power.to_string()
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct Lense {
+    label: String,
+    focal_length: usize,
+}
+
 pub struct Step {
-    instruction: String,
+    label: String,
     operator: char,
-    operator_value: Option<usize>,
+    focal_length: Option<usize>,
 }
 impl Step {
     fn raw_string(&self) -> String {
-        let mut raw_string = self.instruction.clone();
+        let mut raw_string = self.label.clone();
 
         raw_string.push(self.operator);
 
-        if let Some(value) = self.operator_value {
+        if let Some(value) = self.focal_length {
             raw_string.push_str(&value.to_string());
         }
 
         raw_string
     }
+
+    fn do_operation(&self, boxes: Vec<Vec<Lense>>) -> Vec<Vec<Lense>> {
+        match self.operator {
+            '-' => self.remove_lense(boxes),
+            '=' => self.add_lense(boxes),
+            _ => panic!("Unexpected operation {:?}", self.operator),
+        }
+    }
+    fn add_lense(&self, mut boxes: Vec<Vec<Lense>>) -> Vec<Vec<Lense>> {
+        let box_num = hash(&self.label) as usize;
+
+        let new_lense = Lense {
+            label: self.label.clone(),
+            focal_length: self.focal_length.unwrap(),
+        };
+
+        let current_lense_index = boxes[box_num]
+            .iter()
+            .position(|lense| lense.label == new_lense.label);
+
+        if let Some(lense_index) = current_lense_index {
+            boxes[box_num][lense_index] = new_lense;
+        } else {
+            boxes[box_num].push(new_lense);
+        };
+
+        boxes
+    }
+    fn remove_lense(&self, mut boxes: Vec<Vec<Lense>>) -> Vec<Vec<Lense>> {
+        let box_num = hash(&self.label) as usize;
+
+        boxes[box_num] = boxes[box_num]
+            .clone()
+            .into_iter()
+            .filter(|x| x.label != self.label)
+            .collect::<Vec<Lense>>();
+        boxes
+    }
 }
 
-fn hash(string: &String) -> u32 {
+fn hash(string: &str) -> u32 {
     let mut current_value = 0;
 
     for char in string.chars() {
@@ -108,7 +164,7 @@ mod tests {
     fn check_day15_part2_case1() {
         assert_eq!(
             Day15::solve_part_two("rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7"),
-            "0".to_string()
+            "145".to_string()
         )
     }
 
