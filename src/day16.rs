@@ -1,6 +1,6 @@
 use crate::Solution;
-use ndarray::NdProducer;
 use ndarray::{arr1, arr2, Array1};
+use std::cmp;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
@@ -29,41 +29,105 @@ impl Solution for Day16 {
     }
 
     fn part_one((raw_grid, grid): &mut Self::ParsedInput) -> String {
-        let mut rays = vec![Ray {
-            pos: arr1(&[-1, 0]),
-            velocity: arr1(&[1, 0]),
-        }];
+        let sum = get_energized(
+            Ray {
+                pos: arr1(&[-1, 0]),
+                velocity: arr1(&[1, 0]),
+            },
+            &grid,
+            raw_grid,
+        );
 
-        let mut energized = HashSet::new();
-        // energized.insert(rays[0].pos.clone());
-
-        let mut seen_rays = HashSet::new();
-        // seen_rays.insert(rays[0].clone());
-        // let mut debug = get_debug_grid(&energized, &raw_grid);
-
-        while !rays.is_empty() {
-            // debug = get_debug_grid(&energized, &raw_grid);
-            rays = get_new_rays(rays, &grid)
-                .into_iter()
-                .filter(|ray| !seen_rays.contains(ray))
-                .collect();
-
-            for ray in rays.iter() {
-                energized.insert(ray.pos.clone());
-                seen_rays.insert(ray.clone());
-            }
-        }
-
-        print_debug_grid(&energized, &raw_grid);
-
-        let sum = energized.len();
         sum.to_string()
     }
 
-    fn part_two(grid: &mut Self::ParsedInput) -> String {
-        // TODO: implement part two
-        0.to_string()
+    fn part_two((raw_grid, grid): &mut Self::ParsedInput) -> String {
+        let mut highest_energized = 0;
+
+        let x_len = raw_grid[0].len() as isize;
+        let y_len = raw_grid.len() as isize;
+
+        for y in 0..y_len {
+            let left_start_energized = get_energized(
+                Ray {
+                    pos: arr1(&[-1, y]),
+                    velocity: arr1(&[1, 0]),
+                },
+                &grid,
+                raw_grid,
+            );
+
+            let right_start_energized = get_energized(
+                Ray {
+                    pos: arr1(&[x_len, y]),
+                    velocity: arr1(&[-1, 0]),
+                },
+                &grid,
+                raw_grid,
+            );
+
+            highest_energized = cmp::max(
+                cmp::max(left_start_energized, right_start_energized),
+                highest_energized,
+            );
+        }
+
+        for x in 0..x_len {
+            let top_start_energized = get_energized(
+                Ray {
+                    pos: arr1(&[x, -1]),
+                    velocity: arr1(&[0, 1]),
+                },
+                &grid,
+                raw_grid,
+            );
+
+            let bottom_start_energized = get_energized(
+                Ray {
+                    pos: arr1(&[x, y_len]),
+                    velocity: arr1(&[0, 1]),
+                },
+                &grid,
+                raw_grid,
+            );
+
+            highest_energized = cmp::max(
+                cmp::max(top_start_energized, bottom_start_energized),
+                highest_energized,
+            );
+        }
+
+        highest_energized.to_string()
     }
+}
+
+fn get_energized(
+    starting_ray: Ray,
+    grid: &HashMap<Array1<isize>, char>,
+    raw_grid: &Vec<Vec<char>>,
+) -> usize {
+    let mut rays = vec![starting_ray];
+
+    let mut energized = HashSet::new();
+    let mut seen_rays = HashSet::new();
+    // let mut debug = get_debug_grid(&energized, &raw_grid);
+
+    while !rays.is_empty() {
+        // debug = get_debug_grid(&energized, &raw_grid);
+        rays = get_new_rays(rays, &grid)
+            .into_iter()
+            .filter(|ray| !seen_rays.contains(ray))
+            .collect();
+
+        for ray in rays.iter() {
+            energized.insert(ray.pos.clone());
+            seen_rays.insert(ray.clone());
+        }
+    }
+
+    // print_debug_grid(&energized, &raw_grid);
+
+    energized.len()
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
@@ -196,7 +260,7 @@ mod tests {
 .|....-|.\
 ..//.|...."
             ),
-            "0".to_string()
+            "51".to_string()
         )
     }
 
