@@ -34,7 +34,7 @@ impl Solution for Day16 {
                 pos: arr1(&[-1, 0]),
                 velocity: arr1(&[1, 0]),
             },
-            &grid,
+            grid,
             raw_grid,
         );
 
@@ -53,7 +53,7 @@ impl Solution for Day16 {
                     pos: arr1(&[-1, y]),
                     velocity: arr1(&[1, 0]),
                 },
-                &grid,
+                grid,
                 raw_grid,
             );
 
@@ -62,7 +62,7 @@ impl Solution for Day16 {
                     pos: arr1(&[x_len, y]),
                     velocity: arr1(&[-1, 0]),
                 },
-                &grid,
+                grid,
                 raw_grid,
             );
 
@@ -78,7 +78,7 @@ impl Solution for Day16 {
                     pos: arr1(&[x, -1]),
                     velocity: arr1(&[0, 1]),
                 },
-                &grid,
+                grid,
                 raw_grid,
             );
 
@@ -87,7 +87,7 @@ impl Solution for Day16 {
                     pos: arr1(&[x, y_len]),
                     velocity: arr1(&[0, 1]),
                 },
-                &grid,
+                grid,
                 raw_grid,
             );
 
@@ -101,10 +101,11 @@ impl Solution for Day16 {
     }
 }
 
+#[allow(unused_variables)]
 fn get_energized(
     starting_ray: Ray,
     grid: &HashMap<Array1<isize>, char>,
-    raw_grid: &Vec<Vec<char>>,
+    raw_grid: &[Vec<char>],
 ) -> usize {
     let mut rays = vec![starting_ray];
 
@@ -114,7 +115,7 @@ fn get_energized(
 
     while !rays.is_empty() {
         // debug = get_debug_grid(&energized, &raw_grid);
-        rays = get_new_rays(rays, &grid)
+        rays = get_new_rays(rays, grid)
             .into_iter()
             .filter(|ray| !seen_rays.contains(ray))
             .collect();
@@ -142,7 +143,7 @@ fn get_new_rays(rays: Vec<Ray>, grid: &HashMap<Array1<isize>, char>) -> Vec<Ray>
     for ray in rays {
         let next_pos = ray.pos + ray.velocity.clone();
         if let Some(next_char) = grid.get(&next_pos) {
-            match next_char.clone() {
+            match *next_char {
                 '.' => new_rays.push(Ray {
                     pos: next_pos,
                     velocity: ray.velocity,
@@ -198,6 +199,7 @@ fn get_new_rays(rays: Vec<Ray>, grid: &HashMap<Array1<isize>, char>) -> Vec<Ray>
     new_rays
 }
 
+#[allow(dead_code)]
 fn get_debug_grid(energized: &HashSet<Array1<isize>>, raw_grid: &Vec<Vec<char>>) -> Vec<Vec<char>> {
     let mut energized_grid = vec![vec!['.'; raw_grid[0].len()]; raw_grid.len()];
     for pos in energized {
@@ -210,6 +212,8 @@ fn get_debug_grid(energized: &HashSet<Array1<isize>>, raw_grid: &Vec<Vec<char>>)
     // }
     energized_grid
 }
+
+#[allow(dead_code)]
 fn print_debug_grid(energized: &HashSet<Array1<isize>>, raw_grid: &Vec<Vec<char>>) {
     let mut energized_grid = vec![vec!['.'; raw_grid[0].len()]; raw_grid.len()];
     for pos in energized {
