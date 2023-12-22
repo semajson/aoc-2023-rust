@@ -143,55 +143,41 @@ fn get_new_rays(rays: Vec<Ray>, grid: &HashMap<Array1<isize>, char>) -> Vec<Ray>
     for ray in rays {
         let next_pos = ray.pos + ray.velocity.clone();
         if let Some(next_char) = grid.get(&next_pos) {
-            match *next_char {
-                '.' => new_rays.push(Ray {
-                    pos: next_pos,
-                    velocity: ray.velocity,
-                }),
+            let next_velocities = match *next_char {
+                '.' => vec![ray.velocity.clone()],
                 '-' => {
                     let next_velocity_1 = arr2(&[[1, 1], [0, 0]]).dot(&ray.velocity);
                     let next_velocity_2 = arr2(&[[1, -1], [0, 0]]).dot(&ray.velocity);
-                    new_rays.push(Ray {
-                        pos: next_pos.clone(),
-                        velocity: next_velocity_1.clone(),
-                    });
-
                     if next_velocity_1 != next_velocity_2 {
-                        new_rays.push(Ray {
-                            pos: next_pos,
-                            velocity: next_velocity_2,
-                        })
+                        vec![next_velocity_1, next_velocity_2]
+                    } else {
+                        vec![next_velocity_1]
                     }
                 }
                 '|' => {
                     let next_velocity_1 = arr2(&[[0, 0], [1, 1]]).dot(&ray.velocity);
                     let next_velocity_2 = arr2(&[[0, 0], [-1, 1]]).dot(&ray.velocity);
-                    new_rays.push(Ray {
-                        pos: next_pos.clone(),
-                        velocity: next_velocity_1.clone(),
-                    });
                     if next_velocity_1 != next_velocity_2 {
-                        new_rays.push(Ray {
-                            pos: next_pos,
-                            velocity: next_velocity_2,
-                        })
+                        vec![next_velocity_1, next_velocity_2]
+                    } else {
+                        vec![next_velocity_1]
                     }
                 }
                 '/' => {
                     let next_velocity = arr2(&[[0, -1], [-1, 0]]).dot(&ray.velocity);
-                    new_rays.push(Ray {
-                        pos: next_pos,
-                        velocity: next_velocity,
-                    });
+                    vec![next_velocity]
                 }
                 '\\' => {
                     let next_velocity = arr2(&[[0, 1], [1, 0]]).dot(&ray.velocity);
-                    new_rays.push(Ray {
-                        pos: next_pos,
-                        velocity: next_velocity,
-                    });
+                    vec![next_velocity]
                 }
                 _ => panic!("Unexpected pattern {:?}", next_char),
+            };
+            for new_velocity in next_velocities.into_iter() {
+                new_rays.push(Ray {
+                    pos: next_pos.clone(),
+                    velocity: new_velocity,
+                });
             }
         }
     }
