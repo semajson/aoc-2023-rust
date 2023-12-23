@@ -1,68 +1,124 @@
 use crate::Solution;
+use std::collections::HashMap;
 use std::collections::HashSet;
 
 #[derive(Clone, Debug)]
 pub struct Day17;
 
 impl Solution for Day17 {
-    type ParsedInput = String;
+    type ParsedInput = (HashMap<(isize, isize), i64>, (isize, isize));
 
-    fn parse_input(input_lines: &str) -> Self::ParsedInput {
-        // Change the return type of this function by editing the ParsedInput type above.
-        // You can skip this and pass the raw string to each part.
-        // Alternatively, you can parse the input here, either working on the same mutable struct
-        // in parts one and two or passing a tuple with the data required for each part.
-        input_lines.to_string()
+    fn parse_input(input: &str) -> Self::ParsedInput {
+        let input_lines = input.lines().collect::<Vec<&str>>();
+
+        let grid = input_lines
+            .iter()
+            .map(|x| {
+                x.chars()
+                    .map(|x| x.to_digit(10).unwrap() as i64)
+                    .collect::<Vec<i64>>()
+            })
+            .collect::<Vec<Vec<i64>>>();
+
+        let mut cost_map = HashMap::new();
+        let y_len = grid.len();
+        let x_len = grid[0].len();
+        for y in 0..grid.len() {
+            for x in 0..grid[0].len() {
+                cost_map.insert((x as isize, y as isize), grid[y][x] as i64);
+            }
+        }
+        let end = ((x_len - 1) as isize, (y_len - 1) as isize);
+
+        (cost_map, end)
     }
 
-    fn part_one(_parsed_input: &mut Self::ParsedInput) -> String {
-        // TODO: implement part one
-        let mut priority_queue = vec![(
-            Node {
-                x: 0,
-                y: 0,
-                up_count: 0,
-                down_count: 0,
-                left_count: 0,
-                right_count: 0,
-            },
-            Info {
-                cost_to_node: 0,
-                prev_node: None,
-            },
-        )];
-        let mut visited_nodes: HashSet<Node> = HashSet::new();
+    fn part_one((cost_map, end_pos): &mut Self::ParsedInput) -> String {
+        let start_pos = (0, 0);
 
-        while !priority_queue.is_empty() {
-            // Find and remove the smallest node
-            let (node_to_eval, info) = priority_queue
-                .iter()
-                .min_by_key(|(node, info)| info.cost_to_node)
-                .unwrap()
-                .clone();
-            priority_queue.retain(|(node, info)| *node != node_to_eval);
-            visited_nodes.insert(node_to_eval);
+        let min_cost = dijkstra_solve(start_pos, end_pos.clone(), &cost_map);
 
-            // Add node to visited nodes
-
-            // Check if we are at the end
-
-            // Get the reachable nodes
-
-            // For nodes in reachable nodes:
-            // Filter out ones not in the map
-            // Check if in priority queue
-            // If yes, update if quicker
-            // If not, add it to the priorty queue
-        }
-
-        0.to_string()
+        min_cost.to_string()
     }
 
     fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
         // TODO: implement part two
         0.to_string()
     }
+}
+
+fn dijkstra_solve(
+    start_pos: (isize, isize),
+    end_pos: (isize, isize),
+    cost_map: &HashMap<(isize, isize), i64>,
+) -> i64 {
+    // Intialization
+    let mut priority_queue = vec![(
+        Node {
+            x: start_pos.0,
+            y: start_pos.1,
+            up_count: 0,
+            down_count: 0,
+            left_count: 0,
+            right_count: 0,
+        },
+        Info {
+            total_cost_to_node: 0,
+            prev_node: None,
+        },
+    )];
+    let mut visited_nodes: HashSet<Node> = HashSet::new();
+
+    while !priority_queue.is_empty() {
+        // println!("{:?}", priority_queue);
+        // Find and remove the smallest node
+        let (node_to_eval, info) = priority_queue
+            .iter()
+            .min_by_key(|(_, info)| info.total_cost_to_node)
+            .unwrap()
+            .clone();
+        priority_queue.retain(|(node, _)| *node != node_to_eval);
+        visited_nodes.insert(node_to_eval.clone());
+
+        // Check if we are at the end
+        if (node_to_eval.x, node_to_eval.y) == end_pos {
+            return info.total_cost_to_node;
+        }
+
+        let reachable_nodes = node_to_eval.get_reachable_nodes();
+
+        let reachable_nodes = reachable_nodes
+            .into_iter()
+            .filter(|node| !visited_nodes.contains(node))
+            .filter(|node| cost_map.contains_key(&(node.x, node.y)))
+            .collect::<Vec<Node>>();
+
+        for reachable_node in reachable_nodes.into_iter() {
+            let node_cost = cost_map.get(&(reachable_node.x, reachable_node.y)).unwrap();
+            let total_cost_to_node = info.total_cost_to_node + node_cost;
+
+            if let Some((existing_node, existing_info)) = priority_queue
+                .iter_mut()
+                .find(|(node, _)| *node == reachable_node)
+            {
+                if existing_info.total_cost_to_node > total_cost_to_node {
+                    // Found a quicker way to a node, update it.
+                    existing_info.total_cost_to_node = total_cost_to_node;
+                    existing_info.prev_node = Some(node_to_eval.clone());
+                }
+            } else {
+                // Not seen this node yet - add it to priority queue.
+                priority_queue.push((
+                    reachable_node.clone(),
+                    Info {
+                        total_cost_to_node,
+                        prev_node: Some(node_to_eval.clone()),
+                    },
+                ));
+            }
+        }
+    }
+    panic!("Didn't get solve the maze without getting to the end!");
 }
 
 // Todo, maybe replace direction count with an "entered direction" + "count" variables, to make code simpler.
@@ -133,7 +189,7 @@ impl Node {
 
 #[derive(Debug, Clone)]
 pub struct Info {
-    cost_to_node: i64,
+    total_cost_to_node: i64,
     prev_node: Option<Node>,
 }
 
@@ -181,7 +237,7 @@ mod tests {
 2546548887735
 4322674655533"
             ),
-            "0".to_string()
+            "94".to_string()
         )
     }
 
