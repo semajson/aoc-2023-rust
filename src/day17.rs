@@ -1,6 +1,8 @@
 use crate::Solution;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
 
 #[derive(Clone, Debug)]
 pub struct Day17;
@@ -61,10 +63,8 @@ fn dijkstra_solve(
         Node {
             x: start_pos.0,
             y: start_pos.1,
-            up_count: 0,
-            down_count: 0,
-            left_count: 0,
-            right_count: 0,
+            dir: Direction::Right,
+            dir_count: 0,
         },
         Info {
             total_cost_to_node: 0,
@@ -125,15 +125,32 @@ fn dijkstra_solve(
     panic!("Didn't get solve the maze without getting to the end!");
 }
 
+// Lowest to highest
+#[derive(Clone, Debug, Eq, PartialEq, Hash, EnumIter)]
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+impl Direction {
+    fn get_opposite(&self) -> Direction {
+        match self {
+            Direction::Up => Direction::Down,
+            Direction::Down => Direction::Up,
+            Direction::Left => Direction::Right,
+            Direction::Right => Direction::Left,
+        }
+    }
+}
+
 // Todo, maybe replace direction count with an "entered direction" + "count" variables, to make code simpler.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct Node {
     x: isize,
     y: isize,
-    up_count: usize,
-    down_count: usize,
-    left_count: usize,
-    right_count: usize,
+    dir: Direction,
+    dir_count: usize,
 }
 impl Node {
     fn get_reachable_nodes(&self, part_2: bool) -> Vec<Node> {
@@ -147,62 +164,61 @@ impl Node {
     fn get_reachable_nodes_part_1(&self) -> Vec<Node> {
         let mut reachable_nodes = vec![];
 
-        // Up
-        if (self.up_count < 3) && self.down_count == 0 {
-            reachable_nodes.push(Node {
-                x: self.x,
-                y: self.y - 1,
-                up_count: self.up_count + 1,
-                down_count: 0,
-                left_count: 0,
-                right_count: 0,
-            })
-        }
+        for dir in Direction::iter() {
+            if (dir == self.dir) && (self.dir_count == 3) {
+                continue;
+            }
 
-        // Down
-        if self.down_count < 3 && self.up_count == 0 {
-            reachable_nodes.push(Node {
-                x: self.x,
-                y: self.y + 1,
-                up_count: 0,
-                down_count: self.down_count + 1,
-                left_count: 0,
-                right_count: 0,
-            })
-        }
-
-        // Left
-        if self.left_count < 3 && self.right_count == 0 {
-            reachable_nodes.push(Node {
-                x: self.x - 1,
-                y: self.y,
-                up_count: 0,
-                down_count: 0,
-                left_count: self.left_count + 1,
-                right_count: 0,
-            })
-        }
-
-        // Right
-        if self.right_count < 3 && self.left_count == 0 {
-            reachable_nodes.push(Node {
-                x: self.x + 1,
-                y: self.y,
-                up_count: 0,
-                down_count: 0,
-                left_count: 0,
-                right_count: self.right_count + 1,
-            })
+            if dir == self.dir.get_opposite() {
+                // println!("Test");
+                continue;
+            }
+            reachable_nodes.push(self.move_direction(dir))
         }
 
         reachable_nodes
+    }
+
+    fn move_direction(&self, new_dir: Direction) -> Node {
+        let dir_count = if self.dir == new_dir {
+            self.dir_count + 1
+        } else {
+            1
+        };
+        match new_dir {
+            Direction::Up => Node {
+                x: self.x,
+                y: self.y - 1,
+                dir: Direction::Up,
+                dir_count,
+            },
+            Direction::Down => Node {
+                x: self.x,
+                y: self.y + 1,
+                dir: Direction::Down,
+                dir_count,
+            },
+            Direction::Left => Node {
+                x: self.x - 1,
+                y: self.y,
+                dir: Direction::Left,
+                dir_count,
+            },
+            Direction::Right => Node {
+                x: self.x + 1,
+                y: self.y,
+                dir: Direction::Right,
+                dir_count,
+            },
+        }
     }
 
     fn get_reachable_nodes_part_2(&self) -> Vec<Node> {
         vec![]
     }
     fn can_stop(&self, part_2: bool) -> bool {
-        !part_2 || ((self.up_count + self.down_count + self.right_count + self.left_count) > 3)
+        // !part_2 || (self.dir_count > 3)
+        true
     }
 }
 
