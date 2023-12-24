@@ -27,7 +27,7 @@ impl Solution for Day17 {
         let x_len = grid[0].len();
         for y in 0..grid.len() {
             for x in 0..grid[0].len() {
-                cost_map.insert((x as isize, y as isize), grid[y][x] as i64);
+                cost_map.insert((x as isize, y as isize), grid[y][x]);
             }
         }
         let end = ((x_len - 1) as isize, (y_len - 1) as isize);
@@ -38,7 +38,7 @@ impl Solution for Day17 {
     fn part_one((cost_map, end_pos): &mut Self::ParsedInput) -> String {
         let start_pos = (0, 0);
 
-        let min_cost = dijkstra_solve(start_pos, end_pos.clone(), &cost_map, false);
+        let min_cost = dijkstra_solve(start_pos, *end_pos, cost_map, false);
 
         min_cost.to_string()
     }
@@ -46,7 +46,7 @@ impl Solution for Day17 {
     fn part_two((cost_map, end_pos): &mut Self::ParsedInput) -> String {
         let start_pos = (0, 0);
 
-        let min_cost = dijkstra_solve(start_pos, end_pos.clone(), &cost_map, true);
+        let min_cost = dijkstra_solve(start_pos, *end_pos, cost_map, true);
 
         min_cost.to_string()
     }
@@ -101,7 +101,7 @@ fn dijkstra_solve(
             let node_cost = cost_map.get(&(reachable_node.x, reachable_node.y)).unwrap();
             let total_cost_to_node = info.total_cost_to_node + node_cost;
 
-            if let Some((existing_node, existing_info)) = priority_queue
+            if let Some((_, existing_info)) = priority_queue
                 .iter_mut()
                 .find(|(node, _)| *node == reachable_node)
             {
