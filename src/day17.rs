@@ -36,14 +36,17 @@ impl Solution for Day17 {
     fn part_one((cost_map, end_pos): &mut Self::ParsedInput) -> String {
         let start_pos = (0, 0);
 
-        let min_cost = dijkstra_solve(start_pos, end_pos.clone(), &cost_map);
+        let min_cost = dijkstra_solve(start_pos, end_pos.clone(), &cost_map, false);
 
         min_cost.to_string()
     }
 
-    fn part_two(_parsed_input: &mut Self::ParsedInput) -> String {
-        // TODO: implement part two
-        0.to_string()
+    fn part_two((cost_map, end_pos): &mut Self::ParsedInput) -> String {
+        let start_pos = (0, 0);
+
+        let min_cost = dijkstra_solve(start_pos, end_pos.clone(), &cost_map, true);
+
+        min_cost.to_string()
     }
 }
 
@@ -51,6 +54,7 @@ fn dijkstra_solve(
     start_pos: (isize, isize),
     end_pos: (isize, isize),
     cost_map: &HashMap<(isize, isize), i64>,
+    part_2: bool,
 ) -> i64 {
     // Intialization
     let mut priority_queue = vec![(
@@ -81,11 +85,11 @@ fn dijkstra_solve(
         visited_nodes.insert(node_to_eval.clone());
 
         // Check if we are at the end
-        if (node_to_eval.x, node_to_eval.y) == end_pos {
+        if ((node_to_eval.x, node_to_eval.y) == end_pos) && node_to_eval.can_stop(part_2) {
             return info.total_cost_to_node;
         }
 
-        let reachable_nodes = node_to_eval.get_reachable_nodes();
+        let reachable_nodes = node_to_eval.get_reachable_nodes(part_2);
 
         let reachable_nodes = reachable_nodes
             .into_iter()
@@ -132,7 +136,15 @@ struct Node {
     right_count: usize,
 }
 impl Node {
-    fn get_reachable_nodes(&self) -> Vec<Node> {
+    fn get_reachable_nodes(&self, part_2: bool) -> Vec<Node> {
+        if part_2 {
+            self.get_reachable_nodes_part_2()
+        } else {
+            self.get_reachable_nodes_part_1()
+        }
+    }
+
+    fn get_reachable_nodes_part_1(&self) -> Vec<Node> {
         let mut reachable_nodes = vec![];
 
         // Up
@@ -184,6 +196,13 @@ impl Node {
         }
 
         reachable_nodes
+    }
+
+    fn get_reachable_nodes_part_2(&self) -> Vec<Node> {
+        vec![]
+    }
+    fn can_stop(&self, part_2: bool) -> bool {
+        !part_2 || ((self.up_count + self.down_count + self.right_count + self.left_count) > 3)
     }
 }
 
