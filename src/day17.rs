@@ -170,7 +170,27 @@ impl Node {
             }
 
             if dir == self.dir.get_opposite() {
-                // println!("Test");
+                continue;
+            }
+            reachable_nodes.push(self.move_direction(dir))
+        }
+
+        reachable_nodes
+    }
+
+    fn get_reachable_nodes_part_2(&self) -> Vec<Node> {
+        let mut reachable_nodes = vec![];
+
+        for dir in Direction::iter() {
+            if (dir == self.dir) && (self.dir_count == 10) {
+                continue;
+            }
+
+            if (dir != self.dir) && (self.dir_count < 4) {
+                continue;
+            }
+
+            if dir == self.dir.get_opposite() {
                 continue;
             }
             reachable_nodes.push(self.move_direction(dir))
@@ -213,12 +233,8 @@ impl Node {
         }
     }
 
-    fn get_reachable_nodes_part_2(&self) -> Vec<Node> {
-        vec![]
-    }
     fn can_stop(&self, part_2: bool) -> bool {
-        // !part_2 || (self.dir_count > 3)
-        true
+        !part_2 || (self.dir_count >= 4)
     }
 }
 
